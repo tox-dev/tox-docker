@@ -9,7 +9,7 @@ import docker as docker_module
 @hookimpl
 def tox_runtest_pre(venv):
     conf = venv.envconfig
-    docker = docker_module.from_env()
+    docker = docker_module.from_env(version="auto")
 
     seen = set()
     for image in conf.docker:
