@@ -3,6 +3,7 @@ import time
 
 from tox import hookimpl
 from tox.config import Config
+from docker.errors import ImageNotFound
 import docker as docker_module
 
 
@@ -10,13 +11,7 @@ import docker as docker_module
 def tox_runtest_pre(venv):
     conf = venv.envconfig
     docker = docker_module.from_env(version="auto")
-
-    seen = set()
-    for image in conf.docker:
-        baseimage = image.split(":", 1)[0]
-        if baseimage in seen:
-            raise ValueError("Docker image %r is specified more than once" % baseimage)
-        seen.add(baseimage)
+    action = venv.session.newaction(venv, "docker")
 
     environment = {}
     for value in conf.dockerenv:
@@ -24,20 +19,37 @@ def tox_runtest_pre(venv):
         environment[envvar] = value
         venv.envconfig.setenv[envvar] = value
 
-    conf._docker = {}
+    seen = set()
     for image in conf.docker:
-        container = docker.containers.run(
-            image,
-            detach=True,
-            publish_all_ports=True,
-            environment=environment,
-        )
+        name, _, tag = image.partition(":")
+        if name in seen:
+            raise ValueError(
+                "Docker image {!r} is specified more than once".format(name)
+            )
+        seen.add(name)
 
-        baseimage = image.split(":", 1)[0]
-        conf._docker[baseimage] = container
+        try:
+            docker.images.get(image)
+        except ImageNotFound:
+            action.setactivity("docker", "pull {!r}".format(image))
+            with action:
+                docker.images.pull(image, tag=tag or None)
 
-        # >>> container.attrs["NetworkSettings"]["Ports"]
-        # {u'5432/tcp': [{u'HostPort': u'32782', u'HostIp': u'0.0.0.0'}]}
+    conf._docker = []
+    for image in conf.docker:
+        name, _, tag = image.partition(":")
+
+        action.setactivity("docker", "run {!r}".format(image))
+        with action:
+            container = docker.containers.run(
+                image,
+                detach=True,
+                publish_all_ports=True,
+                environment=environment,
+            )
+
+        conf._docker.append(container)
+
         container.reload()
         for containerport, hostports in container.attrs["NetworkSettings"]["Ports"].items():
             hostport = None
@@ -50,7 +62,7 @@ def tox_runtest_pre(venv):
                 continue
 
             envvar = "{}_{}".format(
-                baseimage.upper(),
+                name.upper(),
                 containerport.replace("/", "_").upper(),
             )
             venv.envconfig.setenv[envvar] = hostport
@@ -72,17 +84,19 @@ def tox_runtest_pre(venv):
                     break
             else:
                 raise Exception(
-                    "Never got answer on port {} from {}".format(containerport, baseimage)
+                    "Never got answer on port {} from {}".format(containerport, name)
                 )
-
 
 
 @hookimpl
 def tox_runtest_post(venv):
     conf = venv.envconfig
+    action = venv.session.newaction(venv, "docker")
 
-    for container in conf._docker.values():
-        container.remove(force=True)
+    for container in conf._docker:
+        action.setactivity("docker", "remove {!r}".format(container.short_id))
+        with action:
+            container.remove(force=True)
 
 
 @hookimpl
