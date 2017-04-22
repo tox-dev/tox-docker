@@ -94,7 +94,7 @@ def tox_runtest_post(venv):
     action = venv.session.newaction(venv, "docker")
 
     for container in conf._docker:
-        action.setactivity("docker", "remove {!r}".format(container.short_id))
+        action.setactivity("docker", "remove '{}' (forced)".format(container.short_id))
         with action:
             container.remove(force=True)
 
