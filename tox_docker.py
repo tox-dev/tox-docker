@@ -10,6 +10,9 @@ import docker as docker_module
 @hookimpl
 def tox_runtest_pre(venv):
     conf = venv.envconfig
+    if not conf.docker:
+        return
+
     docker = docker_module.from_env(version="auto")
     action = venv.session.newaction(venv, "docker")
 
@@ -91,6 +94,9 @@ def tox_runtest_pre(venv):
 @hookimpl
 def tox_runtest_post(venv):
     conf = venv.envconfig
+    if not hasattr(conf, "_docker"):
+        return
+
     action = venv.session.newaction(venv, "docker")
 
     for container in conf._docker:
