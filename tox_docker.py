@@ -36,7 +36,7 @@ def tox_runtest_pre(venv):
         except ImageNotFound:
             action.setactivity("docker", "pull {!r}".format(image))
             with action:
-                docker.images.pull(image, tag=tag or None)
+                docker.images.pull(name, tag=tag or None)
 
     conf._docker_containers = []
     for image in conf.docker:
