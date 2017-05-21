@@ -1,6 +1,6 @@
 # tox-docker
 
-A plugin for [tox](https://tox.readthedocs.io/en/latest/) which runs one or
+A [tox](https://tox.readthedocs.io/en/latest/) plugin which runs one or
 more [Docker](https://www.docker.com/) containers during the test run.
 
 ## Usage and Installation
