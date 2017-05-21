@@ -3,6 +3,16 @@
 A plugin for [tox](https://tox.readthedocs.io/en/latest/) which runs one or
 more [Docker](https://www.docker.com/) containers during the test run.
 
+## Usage and Installation
+
+Tox loads all plugins automatically. It is recommended that you install the
+tox-docker plugin into the same Python environment as you install tox into,
+whether that's a virtualenv, etc.
+
+You do not need to do anything special when running tox to invoke
+tox-docker. You do need to configure your project to request docker
+instances (see "Configuration" below).
+
 ## Configuration
 
 In the `testenv` section, list the Docker images you want to include in
@@ -27,7 +37,3 @@ variables of the form `<image-basename>_<exposed-port>_<proto>`. For
 instance, for the postgresql container, there will be an environment
 variable `POSTGRES_5432_TCP` whose value is the ephemeral port number that
 docker has bound the container's port 5432 to.
-
-## Publishing to DevPI
-
-Floodgate, etc.
