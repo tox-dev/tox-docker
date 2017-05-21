@@ -1,7 +1,9 @@
-# tox-docker ![build status](https://travis-ci.org/dcrosta/tox-docker.svg?branch=master)
+# tox-docker 
 
 A [tox](https://tox.readthedocs.io/en/latest/) plugin which runs one or
 more [Docker](https://www.docker.com/) containers during the test run.
+
+[![build status](https://travis-ci.org/dcrosta/tox-docker.svg?branch=master)](https://travis-ci.org/dcrosta/tox-docker)
 
 ## Usage and Installation
 
