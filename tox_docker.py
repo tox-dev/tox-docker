@@ -38,7 +38,7 @@ def tox_runtest_pre(venv):
             with action:
                 docker.images.pull(image, tag=tag or None)
 
-    conf._docker = []
+    conf._docker_containers = []
     for image in conf.docker:
         name, _, tag = image.partition(":")
 
@@ -51,7 +51,7 @@ def tox_runtest_pre(venv):
                 environment=environment,
             )
 
-        conf._docker.append(container)
+        conf._docker_containers.append(container)
 
         container.reload()
         for containerport, hostports in container.attrs["NetworkSettings"]["Ports"].items():
@@ -94,12 +94,12 @@ def tox_runtest_pre(venv):
 @hookimpl
 def tox_runtest_post(venv):
     conf = venv.envconfig
-    if not hasattr(conf, "_docker"):
+    if not hasattr(conf, "_docker_containers"):
         return
 
     action = venv.session.newaction(venv, "docker")
 
-    for container in conf._docker:
+    for container in conf._docker_containers:
         action.setactivity("docker", "remove '{}' (forced)".format(container.short_id))
         with action:
             container.remove(force=True)
