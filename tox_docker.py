@@ -6,6 +6,16 @@ from tox.config import Config
 from docker.errors import ImageNotFound
 import docker as docker_module
 
+            
+def escape_env_var(varname):
+    varname = list(varname.upper())
+    if not varname[0].isalpha():
+        varname[0] = '_'
+    for i, c in enumerate(varname):
+        if not c.isalnum() and c != '_':
+            varname[i] = '_'
+    return "".join(varname)
+
 
 @hookimpl
 def tox_runtest_pre(venv):
@@ -54,6 +64,9 @@ def tox_runtest_pre(venv):
         conf._docker_containers.append(container)
 
         container.reload()
+        gateway_ip = "0.0.0.0"
+        if conf.docker_use_gateway and container.attrs["NetworkSettings"]["Gateway"]:
+            gateway_ip = container.attrs["NetworkSettings"]["Gateway"]
         for containerport, hostports in container.attrs["NetworkSettings"]["Ports"].items():
             hostport = None
             for spec in hostports:
@@ -64,10 +77,15 @@ def tox_runtest_pre(venv):
             if not hostport:
                 continue
 
-            envvar = "{}_{}".format(
-                name.upper(),
-                containerport.replace("/", "_").upper(),
-            )
+            envvar = escape_env_var("{}_HOST".format(
+                name,
+            ))
+            venv.envconfig.setenv[envvar] = gateway_ip
+
+            envvar = escape_env_var("{}_{}".format(
+                name,
+                containerport,
+                ))
             venv.envconfig.setenv[envvar] = hostport
 
             _, proto = containerport.split("/")
@@ -80,7 +98,7 @@ def tox_runtest_pre(venv):
             while (time.time() - start) < 30:
                 try:
                     sock = socket.create_connection(
-                        address=("0.0.0.0", int(hostport)),
+                        address=(gateway_ip, int(hostport)),
                         timeout=0.1,
                     )
                 except socket.error:
@@ -122,4 +140,10 @@ def tox_addoption(parser):
         type="line-list",
         help="List of ENVVAR=VALUE pairs that will be passed to all containers",
         default=[],
+    )
+    parser.add_testenv_attribute(
+        name="docker_use_gateway",
+        type="bool",
+        help="Use gateway ip instead of 0.0.0.0 to connect on container",
+        default=False,
     )
