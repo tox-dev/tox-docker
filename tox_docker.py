@@ -8,6 +8,12 @@ import docker as docker_module
 
             
 def escape_env_var(varname):
+    """Uppercase and sanitize the env var name by replacing
+        all invalid characters by an underscore.
+    The result will match the following regex: [a-zA-Z_][a-zA-Z0-9_]*
+    Example:
+        my.private.registry/cat/image will become MY_PRIVATE_REGISTRY_CAT_IMAGE
+    """
     varname = list(varname.upper())
     if not varname[0].isalpha():
         varname[0] = '_'
