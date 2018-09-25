@@ -1,6 +1,10 @@
 import os
 import unittest
-import urllib2
+
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib2 import urlopen
 
 
 class ToxDockerRegistryTest(unittest.TestCase):
@@ -15,6 +19,6 @@ class ToxDockerRegistryTest(unittest.TestCase):
     def test_it_exposes_the_port(self):
         # the nginx image we use exposes port 80
         url = "http://{host}:{port}/".format(host=os.environ["DOCKER_IO_LIBRARY_NGINX_HOST"], port=os.environ["DOCKER_IO_LIBRARY_NGINX_80_TCP"])
-        response = urllib2.urlopen(url)
+        response = urlopen(url)
         self.assertEqual(200, response.getcode())
-        self.assertIn("Thank you for using nginx.", response.read())
+        self.assertIn("Thank you for using nginx.", str(response.read()))
