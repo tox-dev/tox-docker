@@ -70,9 +70,7 @@ def tox_runtest_pre(venv):
         conf._docker_containers.append(container)
 
         container.reload()
-        gateway_ip = "0.0.0.0"
-        if conf.docker_use_gateway and container.attrs["NetworkSettings"]["Gateway"]:
-            gateway_ip = container.attrs["NetworkSettings"]["Gateway"]
+        gateway_ip = container.attrs["NetworkSettings"]["Gateway"] or "0.0.0.0"
         for containerport, hostports in container.attrs["NetworkSettings"]["Ports"].items():
             hostport = None
             for spec in hostports:
@@ -146,10 +144,4 @@ def tox_addoption(parser):
         type="line-list",
         help="List of ENVVAR=VALUE pairs that will be passed to all containers",
         default=[],
-    )
-    parser.add_testenv_attribute(
-        name="docker_use_gateway",
-        type="bool",
-        help="Use gateway ip instead of 0.0.0.0 to connect on container",
-        default=False,
     )
