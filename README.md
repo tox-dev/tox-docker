@@ -38,4 +38,6 @@ container exposes will be made available to your test suite via environment
 variables of the form `<image-basename>_<exposed-port>_<proto>`. For
 instance, for the postgresql container, there will be an environment
 variable `POSTGRES_5432_TCP` whose value is the ephemeral port number that
-docker has bound the container's port 5432 to.
+docker has bound the container's port 5432 to.  
+NB! Since it's not possible to check whether UDP port is open
+it's just mapping to environment variable without any checks that service up and running.
