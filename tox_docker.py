@@ -70,6 +70,10 @@ def tox_runtest_pre(venv):
             )
             venv.envconfig.setenv[envvar] = hostport
 
+            _, proto = containerport.split("/")
+            if proto == "udp":
+                continue
+
             # mostly-busy-loop until we can connect to that port; that
             # will be our signal that the container is ready (meh)
             start = time.time()
