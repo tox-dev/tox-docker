@@ -13,4 +13,4 @@ install:
 script:
     - tox
     # assure that we fail a build if it contains leftovers
-    - git diff --exit-code
+    - "bash -c 'test -z \"$(git status --porcelain | tee /dev/fd/2)\"'"
