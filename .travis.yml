@@ -2,12 +2,15 @@ language: python
 services:
     - docker
 python:
-    - "2.7"
-    - "3.5"
-    - "3.6"
+  - "2.7"
+  - "3.5"
+  - "3.6"
 env:
-    - TOX_VERSION="tox-2.x"
-    - TOX_VERSION="tox-3.x"
+  matrix:
+#    - SCENARIO_NAME=py27-test
+    - SCENARIO_NAME=test
 install:
-    - pip install --constraint "$TOX_VERSION" .
-script: "tox"
+  - pip install tox-travis
+  - pip install -e ${TRAVIS_BUILD_DIR}
+script:
+  - tox -e ${SCENARIO_NAME}
