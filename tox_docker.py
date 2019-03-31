@@ -7,6 +7,14 @@ from docker.errors import ImageNotFound
 import docker as docker_module
 
 
+def _newaction(venv, message):
+    try:
+        # tox 3.7 and later
+        return venv.new_action(message)
+    except AttributeError:
+        return venv.session.newaction(venv, message)
+
+
 @hookimpl
 def tox_runtest_pre(venv):
     conf = venv.envconfig
@@ -14,7 +22,7 @@ def tox_runtest_pre(venv):
         return
 
     docker = docker_module.from_env(version="auto")
-    action = venv.session.newaction(venv, "docker")
+    action = _newaction(venv, "docker")
 
     environment = {}
     for value in conf.dockerenv:
@@ -101,7 +109,7 @@ def tox_runtest_post(venv):
     if not hasattr(conf, "_docker_containers"):
         return
 
-    action = venv.session.newaction(venv, "docker")
+    action = _newaction(venv, "docker")
 
     for container in conf._docker_containers:
         action.setactivity("docker", "remove '{}' (forced)".format(container.short_id))
