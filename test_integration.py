@@ -18,8 +18,9 @@ class ToxDockerIntegrationTest(unittest.TestCase):
         # the nginx image we use exposes port 80
         self.assertIn("NGINX_HOST", os.environ)
         self.assertIn("NGINX_80_TCP", os.environ)
-        # the telegraf image we use exposes UDP port 8092
-        self.assertIn("TELEGRAF_8092_UDP", os.environ)
+        # the test image we use exposes TCP port 1234 and UDP port 5678
+        self.assertIn("KSDN117_TCP_UDP_TEST_1234_TCP", os.environ)
+        self.assertIn("KSDN117_TCP_UDP_TEST_5678_UDP", os.environ)
 
     def test_it_exposes_the_port(self):
         # the nginx image we use exposes port 80

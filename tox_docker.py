@@ -72,13 +72,12 @@ def tox_runtest_pre(venv):
         container.reload()
         gateway_ip = container.attrs["NetworkSettings"]["Gateway"] or "0.0.0.0"
         for containerport, hostports in container.attrs["NetworkSettings"]["Ports"].items():
-            hostport = None
+
             for spec in hostports:
                 if spec["HostIp"] == "0.0.0.0":
                     hostport = spec["HostPort"]
                     break
-
-            if not hostport:
+            else:
                 continue
 
             envvar = escape_env_var("{}_HOST".format(
