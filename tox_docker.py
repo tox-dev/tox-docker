@@ -7,6 +7,28 @@ from docker.errors import ImageNotFound
 import docker as docker_module
 
 
+def escape_env_var(varname):
+    """
+    Convert a string to a form suitable for use as an environment variable.
+
+    The result will be all uppercase, and will have all invalid characters
+    replaced by an underscore.
+
+    The result will match the following regex: [a-zA-Z_][a-zA-Z0-9_]*
+
+    Example:
+        "my.private.registry/cat/image" will become
+        "MY_PRIVATE_REGISTRY_CAT_IMAGE"
+    """
+    varname = list(varname.upper())
+    if not varname[0].isalpha():
+        varname[0] = '_'
+    for i, c in enumerate(varname):
+        if not c.isalnum() and c != '_':
+            varname[i] = '_'
+    return "".join(varname)
+
+
 def _newaction(venv, message):
     try:
         # tox 3.7 and later
@@ -62,20 +84,33 @@ def tox_runtest_pre(venv):
         conf._docker_containers.append(container)
 
         container.reload()
+        gateway_ip = container.attrs["NetworkSettings"]["Gateway"] or "0.0.0.0"
         for containerport, hostports in container.attrs["NetworkSettings"]["Ports"].items():
-            hostport = None
+
             for spec in hostports:
                 if spec["HostIp"] == "0.0.0.0":
                     hostport = spec["HostPort"]
                     break
-
-            if not hostport:
+            else:
                 continue
 
-            envvar = "{}_{}".format(
-                name.upper(),
-                containerport.replace("/", "_").upper(),
-            )
+            envvar = escape_env_var("{}_HOST".format(
+                name,
+            ))
+            venv.envconfig.setenv[envvar] = gateway_ip
+
+            envvar = escape_env_var("{}_{}_PORT".format(
+                name,
+                containerport,
+            ))
+            venv.envconfig.setenv[envvar] = hostport
+
+            # TODO: remove in 2.0
+            _, proto = containerport.split("/")
+            envvar = escape_env_var("{}_{}".format(
+                name,
+                containerport,
+            ))
             venv.envconfig.setenv[envvar] = hostport
 
             _, proto = containerport.split("/")
@@ -88,7 +123,7 @@ def tox_runtest_pre(venv):
             while (time.time() - start) < 30:
                 try:
                     sock = socket.create_connection(
-                        address=("0.0.0.0", int(hostport)),
+                        address=(gateway_ip, int(hostport)),
                         timeout=0.1,
                     )
                 except socket.error:

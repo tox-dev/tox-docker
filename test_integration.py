@@ -1,6 +1,10 @@
 import os
 import unittest
-import urllib2
+
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib2 import urlopen
 
 
 class ToxDockerIntegrationTest(unittest.TestCase):
@@ -12,13 +16,30 @@ class ToxDockerIntegrationTest(unittest.TestCase):
 
     def test_it_sets_automatic_env_vars(self):
         # the nginx image we use exposes port 80
+        self.assertIn("NGINX_HOST", os.environ)
         self.assertIn("NGINX_80_TCP", os.environ)
-        # the telegraf image we use exposes UDP port 8092
-        self.assertIn("TELEGRAF_8092_UDP", os.environ)
+        self.assertIn("NGINX_80_TCP_PORT", os.environ)
+        self.assertEqual(
+            os.environ["NGINX_80_TCP_PORT"],
+            os.environ["NGINX_80_TCP"],
+        )
+
+        # the test image we use exposes TCP port 1234 and UDP port 5678
+        self.assertIn("KSDN117_TCP_UDP_TEST_1234_TCP", os.environ)
+        self.assertIn("KSDN117_TCP_UDP_TEST_1234_TCP_PORT", os.environ)
+        self.assertEqual(
+            os.environ["KSDN117_TCP_UDP_TEST_1234_TCP_PORT"],
+            os.environ["KSDN117_TCP_UDP_TEST_1234_TCP"],
+        )
+        self.assertIn("KSDN117_TCP_UDP_TEST_5678_UDP_PORT", os.environ)
+        self.assertEqual(
+            os.environ["KSDN117_TCP_UDP_TEST_5678_UDP_PORT"],
+            os.environ["KSDN117_TCP_UDP_TEST_5678_UDP"],
+        )
 
     def test_it_exposes_the_port(self):
         # the nginx image we use exposes port 80
-        url = "http://127.0.0.1:{port}/".format(port=os.environ["NGINX_80_TCP"])
-        response = urllib2.urlopen(url)
+        url = "http://{host}:{port}/".format(host=os.environ["NGINX_HOST"], port=os.environ["NGINX_80_TCP"])
+        response = urlopen(url)
         self.assertEqual(200, response.getcode())
-        self.assertIn("Thank you for using nginx.", response.read())
+        self.assertIn("Thank you for using nginx.", str(response.read()))

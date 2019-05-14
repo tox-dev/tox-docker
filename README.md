@@ -31,17 +31,24 @@ your test suite as it runs, as ordinary environment variables:
         POSTGRES_USER=username
         POSTGRES_DB=dbname
 
-## Port Mapping
+## Host and Port Mapping
 
 tox-docker runs docker with the "publish all ports" option. Any port the
 container exposes will be made available to your test suite via environment
-variables of the form `<image-basename>_<exposed-port>_<proto>`. For
+variables of the form `<image-basename>_<exposed-port>_<protocol>_PORT`. For
 instance, for the postgresql container, there will be an environment
-variable `POSTGRES_5432_TCP` whose value is the ephemeral port number that
-docker has bound the container's port 5432 to.
+variable `POSTGRES_5432_TCP_PORT` whose value is the ephemeral port number
+that docker has bound the container's port 5432 to.
 
 Likewise, exposed UDP ports will have environment variables like
-`TELEGRAF_8092_UDP` whose value is the ephemeral port number that docker has
-bound. NB! Since it's not possible to check whether UDP port is open it's
-just mapping to environment variable without any checks that service up and
-running.
+`TELEGRAF_8092_UDP_PORT` Since it's not possible to check whether UDP port
+is open it's just mapping to environment variable without any checks that
+service up and running.
+
+The host name for each service is also exposed via environment as
+`<image-basename>_HOST`, which is `POSTGRES_HOST` and `TELEGRAF_HOST` for
+the two examples above.
+
+*Deprecation Note:* In older versions of tox-docker, the port was exposed as
+`<image-basename>-<exposed-port>-<protocol>`. This additional environment
+variable is deprecated, but will be supported until tox-docker 2.0.
