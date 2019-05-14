@@ -85,6 +85,14 @@ def tox_runtest_pre(venv):
             ))
             venv.envconfig.setenv[envvar] = gateway_ip
 
+            envvar = escape_env_var("{}_{}_PORT".format(
+                name,
+                containerport,
+            ))
+            venv.envconfig.setenv[envvar] = hostport
+
+            # TODO: remove in 2.0
+            _, proto = containerport.split("/")
             envvar = escape_env_var("{}_{}".format(
                 name,
                 containerport,
