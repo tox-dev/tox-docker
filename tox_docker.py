@@ -6,13 +6,19 @@ from tox.config import Config
 from docker.errors import ImageNotFound
 import docker as docker_module
 
-            
+
 def escape_env_var(varname):
-    """Uppercase and sanitize the env var name by replacing
-        all invalid characters by an underscore.
+    """
+    Convert a string to a form suitable for use as an environment variable.
+
+    The result will be all uppercase, and will have all invalid characters
+    replaced by an underscore.
+
     The result will match the following regex: [a-zA-Z_][a-zA-Z0-9_]*
+
     Example:
-        my.private.registry/cat/image will become MY_PRIVATE_REGISTRY_CAT_IMAGE
+        "my.private.registry/cat/image" will become
+        "MY_PRIVATE_REGISTRY_CAT_IMAGE"
     """
     varname = list(varname.upper())
     if not varname[0].isalpha():
@@ -96,7 +102,7 @@ def tox_runtest_pre(venv):
             envvar = escape_env_var("{}_{}".format(
                 name,
                 containerport,
-                ))
+            ))
             venv.envconfig.setenv[envvar] = hostport
 
             _, proto = containerport.split("/")
