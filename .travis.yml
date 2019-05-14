@@ -10,4 +10,7 @@ env:
     - TOX_VERSION="tox-3.x"
 install:
     - pip install --constraint "$TOX_VERSION" .
-script: "tox"
+script:
+    - tox
+    # assure that we fail a build if it contains leftovers
+    - "bash -c 'test -z \"$(git status --porcelain | tee /dev/fd/2)\"'"
