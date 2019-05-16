@@ -1,4 +1,5 @@
 import socket
+import sys
 import time
 
 from tox import hookimpl
@@ -35,6 +36,16 @@ def _newaction(venv, message):
         return venv.new_action(message)
     except AttributeError:
         return venv.session.newaction(venv, message)
+
+
+def _get_gateway_ip(container):
+    if sys.platform == "darwin":
+        # per https://docs.docker.com/v17.12/docker-for-mac/networking/#use-cases-and-workarounds,
+        # there is no bridge network available in Docker for Mac, and exposed ports are made
+        # available on localhost (but 0.0.0.0 works just as well)
+        return "0.0.0.0"
+    else:
+        return container.attrs["NetworkSettings"]["Gateway"] or "0.0.0.0"
 
 
 @hookimpl
@@ -84,7 +95,7 @@ def tox_runtest_pre(venv):
         conf._docker_containers.append(container)
 
         container.reload()
-        gateway_ip = container.attrs["NetworkSettings"]["Gateway"] or "0.0.0.0"
+        gateway_ip = _get_gateway_ip(container)
         for containerport, hostports in container.attrs["NetworkSettings"]["Ports"].items():
 
             for spec in hostports:
