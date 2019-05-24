@@ -6,10 +6,12 @@ python:
     - "3.5"
     - "3.6"
 env:
-    - TOX_VERSION="tox-2.x"
-    - TOX_VERSION="tox-3.x"
+    - TOX_VERSION="tox-2.x" DOCKER_VERSION="docker-3.x"
+    - TOX_VERSION="tox-2.x" DOCKER_VERSION="docker-4.x"
+    - TOX_VERSION="tox-3.x" DOCKER_VERSION="docker-3.x"
+    - TOX_VERSION="tox-3.x" DOCKER_VERSION="docker-4.x"
 install:
-    - pip install --constraint "$TOX_VERSION" .
+    - pip install --constraint "$TOX_VERSION" --constraint "$DOCKER_VERSION" .
 script:
     - tox
     # assure that we fail a build if it contains leftovers

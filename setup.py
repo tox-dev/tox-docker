@@ -19,7 +19,7 @@ setup(
     maintainer="Dan Crosta",
     maintainer_email="dcrosta@late.am",
     install_requires=[
-        "docker>=2.3.0,<4.0",
+        "docker>=2.3.0,<5.0",
         "tox>=2.7.0,<4.0",
     ],
     py_modules=["tox_docker"],
