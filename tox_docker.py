@@ -8,6 +8,10 @@ from docker.errors import ImageNotFound
 import docker as docker_module
 
 
+class HealthCheckFailed(Exception):
+    pass
+
+
 def escape_env_var(varname):
     """
     Convert a string to a form suitable for use as an environment variable.
@@ -81,8 +85,6 @@ def tox_runtest_pre(venv):
 
     conf._docker_containers = []
     for image in conf.docker:
-        name, _, tag = image.partition(":")
-
         action.setactivity("docker", "run {!r}".format(image))
         with action:
             container = docker.containers.run(
@@ -93,11 +95,27 @@ def tox_runtest_pre(venv):
             )
 
         conf._docker_containers.append(container)
-
         container.reload()
+
+    for container in conf._docker_containers:
+        image = container.attrs["Config"]["Image"]
+        if "Health" in container.attrs["State"]:
+            while True:
+                container.reload()
+                health = container.attrs["State"]["Health"]["Status"]
+                if health == "healthy":
+                    break
+                elif health == "starting":
+                    time.sleep(0.1)
+                elif health == "unhealthy":
+                    # the health check failed after its own timeout
+                    msg = "{!r} failed health check".format(image)
+                    action.setactivity("docker", msg)
+                    raise HealthCheckFailed(msg)
+
+        name, _, tag = image.partition(":")
         gateway_ip = _get_gateway_ip(container)
         for containerport, hostports in container.attrs["NetworkSettings"]["Ports"].items():
-
             for spec in hostports:
                 if spec["HostIp"] == "0.0.0.0":
                     hostport = spec["HostPort"]
