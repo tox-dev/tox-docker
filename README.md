@@ -52,3 +52,28 @@ the two examples above.
 *Deprecation Note:* In older versions of tox-docker, the port was exposed as
 `<image-basename>-<exposed-port>-<protocol>`. This additional environment
 variable is deprecated, but will be supported until tox-docker 2.0.
+
+## Health Checking
+
+As of version 1.4, tox-docker uses Docker's health checking to determine
+when a container is fully running, before it begins your test. For Docker
+images that conatain a `HEALTHCHECK` command, tox-docker uses that.
+
+You may also specify a custom health check in `tox.ini`, in a new section
+like:
+
+```
+[docker:redis:5.0-alpine]
+healthcheck_cmd = redis-cli ping | grep -q PONG
+healthcheck_interval = 1
+healthcheck_timeout = 1
+healthcheck_retries = 30
+healthcheck_start_period = 0.5
+```
+
+The image name -- everything after the `docker:` in the section header --
+must _exactly_ match the image name used in your testenv's `docker` setting.
+
+Tox-docker will print a message for each container that it is waiting on a
+health check from, whether via the container's built-in `HEALTHCHECK` or a
+custom health check.

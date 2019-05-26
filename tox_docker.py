@@ -3,9 +3,13 @@ import sys
 import time
 
 from tox import hookimpl
-from tox.config import Config
+from tox.config import SectionReader
 from docker.errors import ImageNotFound
 import docker as docker_module
+import py
+
+
+NANOSECONDS = 1000000000
 
 
 class HealthCheckFailed(Exception):
@@ -53,22 +57,74 @@ def _get_gateway_ip(container):
 
 
 @hookimpl
+def tox_configure(config):
+    def getfloat(reader, key):
+        val = reader.getstring(key)
+        if val is None:
+            return None
+
+        try:
+            return float(val)
+        except ValueError:
+            msg = "{!r} is not a number (for {} in [{}])".format(
+                val, key, reader.section_name
+            )
+            raise ValueError(msg)
+
+    def gettime(reader, key):
+        return int(getfloat(reader, key) * NANOSECONDS)
+
+    def getint(reader, key):
+        raw = getfloat(reader, key)
+        val = int(raw)
+        if val != raw:
+            msg = "{!r} is not an int (for {} in [{}])".format(
+                val, key, reader.section_name
+            )
+            raise ValueError(msg)
+        return val
+
+    inipath = str(config.toxinipath)
+    iniparser = py.iniconfig.IniConfig(inipath)
+
+    image_configs = {}
+    for section in iniparser.sections:
+        if not section.startswith("docker:"):
+            continue
+        reader = SectionReader(section, iniparser)
+
+        _, _, image = section.partition(":")
+        image_configs[image] = {
+            "healthcheck_cmd": reader.getargv("healthcheck_cmd"),
+            "healthcheck_interval": gettime(reader, "healthcheck_interval"),
+            "healthcheck_timeout": gettime(reader, "healthcheck_timeout"),
+            "healthcheck_retries": getint(reader, "healthcheck_retries"),
+            "healthcheck_start_period": gettime(reader, "healthcheck_start_period"),
+        }
+
+    config._docker_image_configs = image_configs
+
+
+@hookimpl
 def tox_runtest_pre(venv):
-    conf = venv.envconfig
-    if not conf.docker:
+    envconfig = venv.envconfig
+    if not envconfig.docker:
         return
+
+    config = envconfig.config
+    image_configs = config._docker_image_configs
 
     docker = docker_module.from_env(version="auto")
     action = _newaction(venv, "docker")
 
     environment = {}
-    for value in conf.dockerenv:
+    for value in envconfig.dockerenv:
         envvar, _, value = value.partition("=")
         environment[envvar] = value
         venv.envconfig.setenv[envvar] = value
 
     seen = set()
-    for image in conf.docker:
+    for image in envconfig.docker:
         name, _, tag = image.partition(":")
         if name in seen:
             raise ValueError(
@@ -83,8 +139,30 @@ def tox_runtest_pre(venv):
             with action:
                 docker.images.pull(name, tag=tag or None)
 
-    conf._docker_containers = []
-    for image in conf.docker:
+    envconfig._docker_containers = []
+    for image in envconfig.docker:
+        image_config = image_configs.get(image, {})
+        hc_cmd = image_config.get("healthcheck_cmd")
+        hc_interval = image_config.get("healthcheck_interval")
+        hc_timeout = image_config.get("healthcheck_timeout")
+        hc_retries = image_config.get("healthcheck_retries")
+        hc_start_period = image_config.get("healthcheck_start_period")
+
+        if hc_cmd is not None \
+           and hc_interval is not None \
+           and hc_timeout is not None \
+           and hc_retries is not None \
+           and hc_start_period is not None:
+            healthcheck = {
+                "test": ["CMD-SHELL"] + hc_cmd,
+                "interval": hc_interval,
+                "timeout": hc_timeout,
+                "retries": hc_retries,
+                "start_period": hc_start_period,
+            }
+        else:
+            healthcheck = None
+
         action.setactivity("docker", "run {!r}".format(image))
         with action:
             container = docker.containers.run(
@@ -92,26 +170,27 @@ def tox_runtest_pre(venv):
                 detach=True,
                 publish_all_ports=True,
                 environment=environment,
+                healthcheck=healthcheck,
             )
 
-        conf._docker_containers.append(container)
+        envconfig._docker_containers.append(container)
         container.reload()
 
-    for container in conf._docker_containers:
+    for container in envconfig._docker_containers:
         image = container.attrs["Config"]["Image"]
         if "Health" in container.attrs["State"]:
-            while True:
-                container.reload()
-                health = container.attrs["State"]["Health"]["Status"]
-                if health == "healthy":
-                    break
-                elif health == "starting":
-                    time.sleep(0.1)
-                elif health == "unhealthy":
-                    # the health check failed after its own timeout
-                    msg = "{!r} failed health check".format(image)
-                    action.setactivity("docker", msg)
-                    raise HealthCheckFailed(msg)
+            action.setactivity("docker", "health check: {!r}".format(image))
+            with action:
+                while True:
+                    container.reload()
+                    health = container.attrs["State"]["Health"]["Status"]
+                    if health == "healthy":
+                        break
+                    elif health == "starting":
+                        time.sleep(0.1)
+                    elif health == "unhealthy":
+                        # the health check failed after its own timeout
+                        raise HealthCheckFailed("{!r} failed health check".format(image))
 
         name, _, tag = image.partition(":")
         gateway_ip = _get_gateway_ip(container)
@@ -169,13 +248,14 @@ def tox_runtest_pre(venv):
 
 @hookimpl
 def tox_runtest_post(venv):
-    conf = venv.envconfig
-    if not hasattr(conf, "_docker_containers"):
+    envconfig = venv.envconfig
+    config = envconfig.config
+    if not hasattr(config, "_tox_docker"):
         return
 
     action = _newaction(venv, "docker")
 
-    for container in conf._docker_containers:
+    for container in envconfig._docker_containers:
         action.setactivity("docker", "remove '{}' (forced)".format(container.short_id))
         with action:
             container.remove(force=True)
