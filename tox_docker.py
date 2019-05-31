@@ -160,7 +160,7 @@ def tox_runtest_post(venv):
     for container in conf._docker_containers:
         action.setactivity("docker", "remove '{}' (forced)".format(container.short_id))
         with action:
-            container.remove(force=True)
+            container.remove(v=True, force=True)
 
 
 @hookimpl
