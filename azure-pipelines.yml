@@ -1,0 +1,54 @@
+jobs:
+- job: 'Test'
+  pool:
+    vmImage: 'ubuntu-16.04'
+  strategy:
+    matrix:
+      Python27:
+        python.version: '2.7'
+      Python35:
+        python.version: '3.5'
+      Python36:
+        python.version: '3.6'
+      Python37:
+        python.version: '3.7'
+    maxParallel: 4
+
+  steps:
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '$(python.version)'
+      architecture: 'x64'
+
+  - script: |
+      pip install --constraint tox-2.x --constraint docker-3.x .
+      pip show tox tox-docker docker
+      tox
+      # check if there are any changes to tracked files, which should fail the build
+      git diff-index --quiet HEAD --
+    displayName: 'Tox 2.x, Docker 3.x'
+
+
+  - script: |
+      pip install --constraint tox-2.x --constraint docker-4.x .
+      pip show tox tox-docker docker
+      tox
+      # check if there are any changes to tracked files, which should fail the build
+      git diff-index --quiet HEAD --
+    displayName: 'Tox 2.x, Docker 4.x'
+
+  - script: |
+      pip install --constraint tox-3.x --constraint docker-3.x .
+      pip show tox tox-docker docker
+      tox
+      # check if there are any changes to tracked files, which should fail the build
+      git diff-index --quiet HEAD --
+    displayName: 'Tox 3.x, Docker 3.x'
+
+  - script: |
+      pip install --constraint tox-3.x --constraint docker-4.x .
+      pip show tox tox-docker docker
+      tox
+      # check if there are any changes to tracked files, which should fail the build
+      git diff-index --quiet HEAD --
+    displayName: 'Tox 3.x, Docker 4.x'
