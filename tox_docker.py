@@ -249,8 +249,7 @@ def tox_runtest_pre(venv):
 @hookimpl
 def tox_runtest_post(venv):
     envconfig = venv.envconfig
-    config = envconfig.config
-    if not hasattr(config, "_tox_docker"):
+    if not envconfig.docker:
         return
 
     action = _newaction(venv, "docker")
