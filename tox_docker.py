@@ -100,6 +100,7 @@ def tox_configure(config):
             "healthcheck_timeout": gettime(reader, "healthcheck_timeout"),
             "healthcheck_retries": getint(reader, "healthcheck_retries"),
             "healthcheck_start_period": gettime(reader, "healthcheck_start_period"),
+            "skip_port_validation": reader.getbool("skip_port_validation", default=False),
         }
 
     config._docker_image_configs = image_configs
@@ -223,6 +224,10 @@ def tox_runtest_pre(venv):
 
             _, proto = containerport.split("/")
             if proto == "udp":
+                continue
+
+            # skip port validation if user requests it
+            if image_configs[image]["skip_port_validation"]:
                 continue
 
             # mostly-busy-loop until we can connect to that port; that

@@ -83,3 +83,14 @@ must *exactly* match the image name used in your testenv's ``docker`` setting.
 tox-docker will print a message for each container that it is waiting on a
 health check from, whether via the container's built-in ``HEALTHCHECK`` or a
 custom health check.
+
+Port Scanning
+-------------
+
+Since version 1.0, tox-docker has scanned published ports of created containers
+to determine when the image is active. However, not all published ports may be
+active at a given time which can result in errors. As of version 1.5, tox-docker
+allows you to disable this behavior if necessary, in a new section like::
+
+    [docker:mysql:5.6]
+    skip_port_validation = True

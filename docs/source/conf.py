@@ -26,6 +26,7 @@ version = release = vcversioner.find_version(root=ROOT_DIR).version
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'reno.sphinxext',
 ]
 
 # -- Options for HTML output -------------------------------------------------

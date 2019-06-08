@@ -1,0 +1,10 @@
+---
+features:
+  - |
+    A new ``skip_port_validation`` flag is added. This can be used to disable
+    port scanning for created instances and is useful for images that provide
+    optional port. It can be configured for each image in a ``[docker:IMAGE]``
+    section. For example::
+
+        [docker:mysql:8.0]
+        skip_port_validation = True
