@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import os
 import sys
 import unittest
@@ -48,18 +49,25 @@ class ToxDockerIntegrationTest(unittest.TestCase):
         self.assertIn("Thank you for using nginx.", str(response.read()))
 
 
+@contextmanager
+def sys_platform_as(value):
+    old_value = sys.platform
+    sys.platform = value
+    try:
+        yield
+    finally:
+        sys.platform = old_value
+
+
 class MacOSTest(unittest.TestCase):
 
     def test_gateway_ip_is_zero_zero_zero_zero(self):
         class NotARealContainer(object):
             attrs = {"NetworkSettings": {"Gateway": "1.2.3.4", }}
-
         container = NotARealContainer()
-        self.assertEqual(_get_gateway_ip(container), "1.2.3.4")
 
-        old_sys_platform = sys.platform
-        try:
-            sys.platform = "darwin"
+        with sys_platform_as("linux2"):
+            self.assertEqual(_get_gateway_ip(container), "1.2.3.4")
+
+        with sys_platform_as("darwin"):
             self.assertEqual(_get_gateway_ip(container), "0.0.0.0")
-        finally:
-            sys.platform = old_sys_platform
