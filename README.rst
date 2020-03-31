@@ -40,12 +40,23 @@ your test suite as it runs, as ordinary environment variables::
 Host and Port Mapping
 ---------------------
 
-tox-docker runs docker with the "publish all ports" option. Any port the
-container exposes will be made available to your test suite via environment
-variables of the form ``<image-basename>_<exposed-port>_<protocol>_PORT``.
-For instance, for the PostgreSQL container, there will be an environment
-variable ``POSTGRES_5432_TCP_PORT`` whose value is the ephemeral port number
-that docker has bound the container's port 5432 to.
+By default, tox-docker runs the container with the "publish all ports" option.
+You may also specify port publishing in ``tox.ini``, in a new section like::
+
+    [docker:redis:5.0-alpine]
+    ports = 5432:5432/tcp
+
+The image name -- everything after the ``docker:`` in the section header --
+must *exactly* match the image name used in your testenv's ``docker`` setting.
+Published ports are separated by a newline and are in the format
+``<HOST>:<CONTAINER>/<PROTOCOL>``.
+
+Any port the container exposes will be made available to your test suite via
+environment variables of the form
+``<image-basename>_<exposed-port>_<protocol>_PORT``.  For instance, for the
+PostgreSQL container, there will be an environment variable
+``POSTGRES_5432_TCP_PORT`` whose value is the ephemeral port number that docker
+has bound the container's port 5432 to.
 
 Likewise, exposed UDP ports will have environment variables like
 ``TELEGRAF_8092_UDP_PORT`` Since it's not possible to check whether UDP port
