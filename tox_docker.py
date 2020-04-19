@@ -94,14 +94,17 @@ def tox_configure(config):
         reader = SectionReader(section, iniparser)
 
         _, _, image = section.partition(":")
-        image_configs[image] = {
-            "healthcheck_cmd": reader.getargv("healthcheck_cmd"),
-            "healthcheck_interval": gettime(reader, "healthcheck_interval"),
-            "healthcheck_timeout": gettime(reader, "healthcheck_timeout"),
-            "healthcheck_retries": getint(reader, "healthcheck_retries"),
-            "healthcheck_start_period": gettime(reader, "healthcheck_start_period"),
-            "ports": reader.getlist("ports"),
-        }
+        image_configs[image] = {}
+        if reader.getstring("healthcheck_cmd"):
+            image_configs[image].update({
+                "healthcheck_cmd": reader.getargv("healthcheck_cmd"),
+                "healthcheck_interval": gettime(reader, "healthcheck_interval"),
+                "healthcheck_timeout": gettime(reader, "healthcheck_timeout"),
+                "healthcheck_retries": getint(reader, "healthcheck_retries"),
+                "healthcheck_start_period": gettime(reader, "healthcheck_start_period"),
+            })
+        if reader.getstring("ports"):
+            image_configs[image]["ports"] = reader.getlist("ports")
 
     config._docker_image_configs = image_configs
 
