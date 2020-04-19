@@ -8,11 +8,11 @@ client = docker.from_env(version="auto")
 envdir = os.environ["TOX_ENV_DIR"]
 
 container_ids = set([
-    container.attrs["Id"]
+    container.attrs["Id"].strip()
     for container in client.containers.list()
 ])
 volume_ids = set([
-    volume.attrs["Name"]
+    volume.attrs["Name"].strip()
     for volume in client.volumes.list()
 ])
 
