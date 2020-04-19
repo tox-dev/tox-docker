@@ -100,9 +100,23 @@ def tox_configure(config):
             "healthcheck_timeout": gettime(reader, "healthcheck_timeout"),
             "healthcheck_retries": getint(reader, "healthcheck_retries"),
             "healthcheck_start_period": gettime(reader, "healthcheck_start_period"),
+            "ports": reader.getlist("ports"),
         }
 
     config._docker_image_configs = image_configs
+
+
+def _validate_port(port_line):
+    host_port, _, container_port_proto = port_line.partition(":")
+    host_port = int(host_port)
+
+    container_port, _, protocol = container_port_proto.partition("/")
+    container_port = int(container_port)
+
+    if protocol.lower() not in ("tcp", "udp"):
+        raise ValueError("protocol is not tcp or udp")
+
+    return (host_port, container_port_proto)
 
 
 @hookimpl
@@ -163,12 +177,20 @@ def tox_runtest_pre(venv):
         else:
             healthcheck = None
 
+        ports = {}
+        for port_mapping in image_config.get("ports", []):
+            host_port, container_port_proto = _validate_port(port_mapping)
+            existing_ports = set(ports.get(container_port_proto, []))
+            existing_ports.add(host_port)
+            ports[container_port_proto] = list(existing_ports)
+
         action.setactivity("docker", "run {!r}".format(image))
         with action:
             container = docker.containers.run(
                 image,
                 detach=True,
-                publish_all_ports=True,
+                publish_all_ports=len(ports) == 0,
+                ports=ports,
                 environment=environment,
                 healthcheck=healthcheck,
             )
@@ -195,6 +217,10 @@ def tox_runtest_pre(venv):
         name, _, tag = image.partition(":")
         gateway_ip = _get_gateway_ip(container)
         for containerport, hostports in container.attrs["NetworkSettings"]["Ports"].items():
+            if hostports is None:
+                # The port is exposed by the container, but not published.
+                continue
+
             for spec in hostports:
                 if spec["HostIp"] == "0.0.0.0":
                     hostport = spec["HostPort"]
