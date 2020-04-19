@@ -1,20 +1,10 @@
-"""
-A plugin for tox_ which runs one or more Docker_ containers during the test
-run.
-
-See full documentation in the README_.
-
-.. _tox: https://tox.readthedocs.io/en/latest/
-.. _Docker: https://www.docker.com/
-.. _README: https://github.com/tox-dev/tox-docker/blob/master/README.md
-"""
 from setuptools import setup
 
 
 setup(
     name="tox-docker",
     description="Launch a docker instance around test runs",
-    long_description=__doc__,
+    long_description=open("README.rst").read(),
     url="https://github.com/tox-dev/tox-docker",
     maintainer="Dan Crosta",
     maintainer_email="dcrosta@late.am",
