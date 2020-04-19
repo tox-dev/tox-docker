@@ -16,4 +16,16 @@ setup(
     entry_points={"tox": ["docker = tox_docker"]},
     setup_requires=["vcversioner"],
     vcversioner={"version_module_paths" : ["_version.py"]},
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Environment :: Plugins",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: BSD License",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Topic :: Software Development :: Testing",
+    ],
 )
