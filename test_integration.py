@@ -107,5 +107,5 @@ class GatewayIpTest(unittest.TestCase):
         container = NotARealContainer()
 
         with patch.dict('os.environ', {'TOX_DOCKER_GATEWAY_HOST': 'localhost', 'TOX_DOCKER_GATEWAY_IP': '192.168.1.1'}):
-            with self.assertRaises(RuntimeException):
+            with self.assertRaises(RuntimeError):
                 _get_gateway_ip(container)
