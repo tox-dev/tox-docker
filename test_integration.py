@@ -87,3 +87,25 @@ class GatewayIpTest(unittest.TestCase):
                 self.assertEqual(_get_gateway_ip(container), "192.168.1.1")
 
             self.assertEqual(_get_gateway_ip(container), "1.2.3.4")
+
+    def test_gateway_host_env_override(self):
+        class NotARealContainer(object):
+            attrs = {"NetworkSettings": {"Gateway": "1.2.3.4", }}
+        container = NotARealContainer()
+
+        with sys_platform_as("linux2"):
+            self.assertEqual(_get_gateway_ip(container), "1.2.3.4")
+
+            with patch.dict('os.environ', {'TOX_DOCKER_GATEWAY_HOST': 'localhost'}):
+                self.assertIn(_get_gateway_ip(container), ['127.0.0.1', '::1'])
+
+            self.assertEqual(_get_gateway_ip(container), "1.2.3.4")
+
+    def test_gateway_ip_and_host_env_override(self):
+        class NotARealContainer(object):
+            attrs = {"NetworkSettings": {"Gateway": "1.2.3.4", }}
+        container = NotARealContainer()
+
+        with patch.dict('os.environ', {'TOX_DOCKER_GATEWAY_HOST': 'localhost', 'TOX_DOCKER_GATEWAY_IP': '192.168.1.1'}):
+            with self.assertRaises(RuntimeException):
+                _get_gateway_ip(container)
