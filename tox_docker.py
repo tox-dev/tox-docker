@@ -1,3 +1,4 @@
+import os
 import socket
 import sys
 import time
@@ -47,13 +48,16 @@ def _newaction(venv, message):
 
 
 def _get_gateway_ip(container):
-    if sys.platform == "darwin":
-        # per https://docs.docker.com/v17.12/docker-for-mac/networking/#use-cases-and-workarounds,
-        # there is no bridge network available in Docker for Mac, and exposed ports are made
-        # available on localhost (but 0.0.0.0 works just as well)
-        return "0.0.0.0"
-    else:
-        return container.attrs["NetworkSettings"]["Gateway"] or "0.0.0.0"
+    addr = os.getenv('TOX_DOCKER_GATEWAY_IP')
+    if not addr:
+        if sys.platform == "darwin":
+            # per https://docs.docker.com/v17.12/docker-for-mac/networking/#use-cases-and-workarounds,
+            # there is no bridge network available in Docker for Mac, and exposed ports are made
+            # available on localhost (but 0.0.0.0 works just as well)
+            addr = "0.0.0.0"
+        else:
+            addr = container.attrs["NetworkSettings"]["Gateway"] or "0.0.0.0"
+    return addr
 
 
 @hookimpl
