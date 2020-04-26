@@ -2,6 +2,7 @@ from contextlib import contextmanager
 import os
 import sys
 import unittest
+from unittest.mock import patch
 
 try:
     from urllib.request import urlopen
@@ -82,7 +83,7 @@ class GatewayIpTest(unittest.TestCase):
         with sys_platform_as("linux2"):
             self.assertEqual(_get_gateway_ip(container), "1.2.3.4")
 
-            with unittest.mock.patch.dict('os.environ', {'TOX_DOCKER_GATEWAY_IP': '192.168.1.1'}):
+            with patch.dict('os.environ', {'TOX_DOCKER_GATEWAY_IP': '192.168.1.1'}):
                 self.assertEqual(_get_gateway_ip(container), "192.168.1.1")
 
             self.assertEqual(_get_gateway_ip(container), "1.2.3.4")
