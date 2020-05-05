@@ -95,8 +95,6 @@ tox-docker will print a message for each container that it is waiting on a
 health check from, whether via the container's built-in ``HEALTHCHECK`` or a
 custom health check.
 
-If you are running in a Docker-In-Docker environment, you can override the
-address used for port checking using the environment variables
-``TOX_DOCKER_GATEWAY_HOST`` or ``TOX_DOCKER_GATEWAY_IP``.  These variables
-may not be specified together as the case is ambiguous.  Use whichever is
-more convenient for your environment.
+If you are running in a Docker-In-Docker environment, you can override the address
+used for port checking using the environment variable ``TOX_DOCKER_GATEWAY``. This
+variable should be the hostname or ip address used to connect to the container.

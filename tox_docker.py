@@ -48,13 +48,10 @@ def _newaction(venv, message):
 
 
 def _get_gateway_ip(container):
-    host = os.getenv('TOX_DOCKER_GATEWAY_HOST')
-    ip = os.getenv('TOX_DOCKER_GATEWAY_IP')
-    if host and ip:
-        raise RuntimeError('Environment variables "TOX_DOCKER_GATEWAY_HOST" and "TOX_DOCKER_GATEWAY_IP" must not be specified together.')
-    elif host:
-        ip = socket.gethostbyname(host)
-    if not ip:
+    gateway = os.getenv('TOX_DOCKER_GATEWAY')
+    if gateway:
+        ip = socket.gethostbyname(gateway)
+    else:
         if sys.platform == "darwin":
             # per https://docs.docker.com/v17.12/docker-for-mac/networking/#use-cases-and-workarounds,
             # there is no bridge network available in Docker for Mac, and exposed ports are made
