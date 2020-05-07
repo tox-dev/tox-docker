@@ -94,3 +94,7 @@ must *exactly* match the image name used in your testenv's ``docker`` setting.
 tox-docker will print a message for each container that it is waiting on a
 health check from, whether via the container's built-in ``HEALTHCHECK`` or a
 custom health check.
+
+If you are running in a Docker-In-Docker environment, you can override the address
+used for port checking using the environment variable ``TOX_DOCKER_GATEWAY``. This
+variable should be the hostname or ip address used to connect to the container.
