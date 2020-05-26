@@ -223,6 +223,7 @@ def tox_runtest_pre(venv):
                 ports=ports,
                 environment=environment,
                 healthcheck=healthcheck,
+                links=links,
             )
 
         envconfig._docker_containers.append(container)
