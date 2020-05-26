@@ -110,6 +110,8 @@ def tox_configure(config):
             })
         if reader.getstring("ports"):
             image_configs[image]["ports"] = reader.getlist("ports")
+        if reader.getstring("links"):
+            image_configs[image]["links"] = reader.getlist("links")
 
     config._docker_image_configs = image_configs
 
@@ -125,6 +127,18 @@ def _validate_port(port_line):
         raise ValueError("protocol is not tcp or udp")
 
     return (host_port, container_port_proto)
+
+
+def _validate_link(link_line):
+    name, _, alias = link_line.partition(":")
+    container_id = None
+    for container in envconfig._docker_containers:
+        if container.image.startswith(name):
+            container.id
+            break
+    if container_id is None:
+        raise ValueError("container name '%s' not mapped to container id. you are responsible for proper ordering of containers by dependencies" % name)
+    return (container_id, alias)
 
 
 @hookimpl
@@ -191,6 +205,13 @@ def tox_runtest_pre(venv):
             existing_ports = set(ports.get(container_port_proto, []))
             existing_ports.add(host_port)
             ports[container_port_proto] = list(existing_ports)
+        
+        links = {}
+        for link_mapping in image_config.get("links", []):
+            # links expected to be of the form:
+            # links = container1:alias1 container2:alias2
+            container, alias = _validate_link(envconfig, link_mapping)
+            links[container] = alias
 
         action.setactivity("docker", "run {!r}".format(image))
         with action:
