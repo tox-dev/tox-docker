@@ -133,8 +133,9 @@ def _validate_link(link_line):
     name, _, alias = link_line.partition(":")
     container_id = None
     for container in envconfig._docker_containers:
-        if container.image.startswith(name):
-            container.id
+        image_name, _, _ = container.image.partition(":")
+        if image_name == name:
+            container_id = container.id
             break
     if container_id is None:
         raise ValueError("container name '%s' not mapped to container id. you are responsible for proper ordering of containers by dependencies" % name)
