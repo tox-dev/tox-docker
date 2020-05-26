@@ -129,7 +129,7 @@ def _validate_port(port_line):
     return (host_port, container_port_proto)
 
 
-def _validate_link(link_line):
+def _validate_link(envconfig, link_line):
     name, _, alias = link_line.partition(":")
     container_id = None
     for container in envconfig._docker_containers:
@@ -210,7 +210,7 @@ def tox_runtest_pre(venv):
         links = {}
         for link_mapping in image_config.get("links", []):
             # links expected to be of the form:
-            # links = container1:alias1 container2:alias2
+            # links = IMAGE_NAME1 IMAGE_NAME2:alias2
             container, alias = _validate_link(envconfig, link_mapping)
             links[container] = alias
 
