@@ -44,7 +44,7 @@ class ToxDockerLinksTest(unittest.TestCase):
         self.assertEqual(expected_alpine_links, alpine_links)
         
         expected_docker_links = [
-            "{}:{}/a-user-specified-link-ref".format(busybox_name, docker_name),
+            "{}:{}/a-user-specified-alias".format(busybox_name, docker_name),
             "{}:{}".format(alpine_name, docker_name)
         ]
         self.assertEqual(expected_docker_links, docker_links)
