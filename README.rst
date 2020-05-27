@@ -98,3 +98,25 @@ custom health check.
 If you are running in a Docker-In-Docker environment, you can override the address
 used for port checking using the environment variable ``TOX_DOCKER_GATEWAY``. This
 variable should be the hostname or ip address used to connect to the container.
+
+Container Linking
+-----------------
+
+Containers can be linked together using the `links` key.  The `links` configuration
+should use the form `{IMAGE_NAME}` or `{IMAGE_NAME}:{ALIAS}`.  Multiple links may
+be provided as a space separated list.
+
+For example::
+
+    docker = 
+        memcached:alpine
+        postgres:alpine
+        elasticsearch:7.7.0
+    dockerenv =
+        POSTGRES_PASSWORD=password
+        discovery.type=single-node
+        ES_JAVA_OPTS=-Xms512m -Xmx512m
+    [docker:postgres:alpine]
+    links = memcached
+    [docker:elasticsearch:7.7.0]
+    links = memcached:cache postgres
