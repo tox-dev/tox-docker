@@ -12,13 +12,13 @@ class ToxDockerLinksTest(unittest.TestCase):
         busybox_container = None
         docker_container = None
         for container in client.containers.list():
-            if alpine_container is None and "alpine" in container.attrs['Config']['Image']:
+            if alpine_container is None and "postgres" in container.attrs['Config']['Image']:
                 alpine_container = container
             
-            if busybox_container is None and "busybox" in container.attrs['Config']['Image']:
+            if busybox_container is None and "memcached" in container.attrs['Config']['Image']:
                 busybox_container = container
             
-            if docker_container is None and "docker" in container.attrs['Config']['Image']:
+            if docker_container is None and "elasticsearch" in container.attrs['Config']['Image']:
                 docker_container = container
             
             if all([alpine_container, busybox_container, docker_container]):
