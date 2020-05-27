@@ -39,7 +39,7 @@ class ToxDockerLinksTest(unittest.TestCase):
         self.assertIsNone(busybox_links)
         
         expected_alpine_links = [
-            "{}:{}".format(busybox_name, alpine_name)
+            "{}:{}/{}".format(busybox_name, alpine_name, busybox_container.id)
         ]
         self.assertEqual(expected_alpine_links, alpine_links)
         
