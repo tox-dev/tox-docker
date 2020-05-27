@@ -47,4 +47,4 @@ class ToxDockerLinksTest(unittest.TestCase):
             "{}:{}/a-user-specified-alias".format(memcached_name, elasticsearch_name),
             "{}:{}/{}".format(postgres_name, elasticsearch_name, postgres_container.id),
         ]
-        self.assertEqual(expected_elasticsearch_links, elasticsearch_links)
+        self.assertEqual(sorted(expected_elasticsearch_links), sorted(elasticsearch_links))
