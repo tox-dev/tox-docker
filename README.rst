@@ -120,3 +120,10 @@ For example::
     links = memcached
     [docker:elasticsearch:7.7.0]
     links = memcached:cache postgres
+
+Note: No dependency resolution is performed. You must define containers in proper
+dependency order.  An error will be raised if a link references a container that has
+not yet been processed.  Notice in the example above that `postgres` is listed after
+`memcached`.  And `elasticsearch` is listed after both `memcached` and `postgres`.
+It would be an error to list `postgres` before `memcached` and likewise for placing
+`elasticsearch` before either `postgres` or `memcached`.
