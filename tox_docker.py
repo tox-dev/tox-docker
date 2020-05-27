@@ -102,7 +102,7 @@ def tox_configure(config):
         image_configs[image] = {}
         if reader.getstring("healthcheck_cmd"):
             image_configs[image].update({
-                "healthcheck_cmd": reader.getargv("healthcheck_cmd"),
+                "healthcheck_cmd": reader.getstring("healthcheck_cmd"),
                 "healthcheck_interval": gettime(reader, "healthcheck_interval"),
                 "healthcheck_timeout": gettime(reader, "healthcheck_timeout"),
                 "healthcheck_retries": getint(reader, "healthcheck_retries"),
@@ -180,6 +180,9 @@ def tox_runtest_pre(venv):
     for image in envconfig.docker:
         image_config = image_configs.get(image, {})
         hc_cmd = image_config.get("healthcheck_cmd")
+        print("hc_cmd:")
+        import json
+        print(json.dumps(hc_cmd))
         hc_interval = image_config.get("healthcheck_interval")
         hc_timeout = image_config.get("healthcheck_timeout")
         hc_retries = image_config.get("healthcheck_retries")
@@ -191,7 +194,7 @@ def tox_runtest_pre(venv):
            and hc_retries is not None \
            and hc_start_period is not None:
             healthcheck = {
-                "test": ["CMD-SHELL"] + hc_cmd,
+                "test": ["CMD-SHELL", hc_cmd],
                 "interval": hc_interval,
                 "timeout": hc_timeout,
                 "retries": hc_retries,
