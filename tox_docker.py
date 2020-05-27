@@ -180,9 +180,6 @@ def tox_runtest_pre(venv):
     for image in envconfig.docker:
         image_config = image_configs.get(image, {})
         hc_cmd = image_config.get("healthcheck_cmd")
-        print("hc_cmd:")
-        import json
-        print(json.dumps(hc_cmd))
         hc_interval = image_config.get("healthcheck_interval")
         hc_timeout = image_config.get("healthcheck_timeout")
         hc_retries = image_config.get("healthcheck_retries")
