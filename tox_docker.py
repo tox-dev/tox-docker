@@ -209,8 +209,6 @@ def tox_runtest_pre(venv):
         
         links = {}
         for link_mapping in image_config.get("links", []):
-            # links expected to be of the form:
-            # links = IMAGE_NAME1 IMAGE_NAME2:alias2
             container, alias = _validate_link(envconfig, link_mapping)
             links[container] = alias
 
