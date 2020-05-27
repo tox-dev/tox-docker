@@ -10,7 +10,7 @@ class ToxDockerLinksTest(unittest.TestCase):
         client = docker.from_env(version="auto")
         postgres_container = None
         memcached_container = None
-        docker_container = None
+        elasticsearch_container = None
         for container in client.containers.list():
             if postgres_container is None and "postgres" in container.attrs['Config']['Image']:
                 postgres_container = container
@@ -18,23 +18,23 @@ class ToxDockerLinksTest(unittest.TestCase):
             if memcached_container is None and "memcached" in container.attrs['Config']['Image']:
                 memcached_container = container
             
-            if docker_container is None and "elasticsearch" in container.attrs['Config']['Image']:
-                docker_container = container
+            if elasticsearch_container is None and "elasticsearch" in container.attrs['Config']['Image']:
+                elasticsearch_container = container
             
-            if all([postgres_container, memcached_container, docker_container]):
+            if all([postgres_container, memcached_container, elasticsearch_container]):
                 break
 
         self.assertIsNotNone(postgres_container, "could not find postgres container")
         self.assertIsNotNone(memcached_container, "could not find memcached container")
-        self.assertIsNotNone(docker_container, "could not find docker container")
+        self.assertIsNotNone(elasticsearch_container, "could not find elasticsearch container")
         
         postgres_name = postgres_container.attrs["Name"]
         memcached_name = memcached_container.attrs["Name"]
-        docker_name = docker_container.attrs["Name"]
+        elasticsearch_name = elasticsearch_container.attrs["Name"]
         
         postgres_links = postgres_container.attrs["HostConfig"]["Links"]
         memcached_links = memcached_container.attrs["HostConfig"]["Links"]
-        docker_links = docker_container.attrs["HostConfig"]["Links"]
+        elasticsearch_links = elasticsearch_container.attrs["HostConfig"]["Links"]
         
         self.assertIsNone(memcached_links)
         
@@ -43,8 +43,8 @@ class ToxDockerLinksTest(unittest.TestCase):
         ]
         self.assertEqual(expected_postgres_links, postgres_links)
         
-        expected_docker_links = [
-            "{}:{}/a-user-specified-alias".format(memcached_name, docker_name),
-            "{}:{}/{}".format(postgres_name, docker_name, postgres_container.id),
+        expected_elasticsearch_links = [
+            "{}:{}/a-user-specified-alias".format(memcached_name, elasticsearch_name),
+            "{}:{}/{}".format(postgres_name, elasticsearch_name, postgres_container.id),
         ]
-        self.assertEqual(expected_docker_links, docker_links)
+        self.assertEqual(expected_elasticsearch_links, elasticsearch_links)
