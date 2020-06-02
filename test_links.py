@@ -72,10 +72,16 @@ class ToxDockerLinksTest(unittest.TestCase):
         self.assertEqual(nginx_container.exec_run("curl --noproxy '*' http://hub:5000")[0], 0)
         self.assertEqual(nginx_container.exec_run("curl --noproxy '*' http://httpd")[0], 0)
     
-    def test_validate_link_line_with_port(self):
-        name, alias = _validate_link_line('some.fake.domain:1234/some/image:voodoo')
-        self.assertEqual(name, 'some.fake.domain:1234/some/image')
-        self.assertEqual(alias, 'voodoo')
+    def test_validate_link_line(self):
+        for line, expected_name, expected_alias in (
+            ('some.fake.domain:1234/some/image:voodoo', 'some.fake.domain:1234/some/image', 'voodoo'),
+            ('httpd:apache', 'httpd', 'apache'),
+            ('httpd', 'httpd', ''),
+        ):
+            with self.subTest(line=line):
+                name, alias = _validate_link_line(line)
+                self.assertEqual(name, expected_name)
+                self.assertEqual(alias, expected_alias)
 
     def test_validate_link_line_rejects_dangling_comma(self):
         for invalid_line, expected_message in (
