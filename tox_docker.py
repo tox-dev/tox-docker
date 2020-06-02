@@ -132,7 +132,7 @@ def _validate_port(port_line):
 def _validate_link_line(link_line):
     name, sep, alias = link_line.partition(":")
     if sep and not alias:
-        raise ValueError("Link to %s has dangling ':'. Remove it or add an alias." % name)
+        raise ValueError("Linked to '%s' container with dangling ':'. Remove it or add an alias." % name)
     return name, alias
 
 

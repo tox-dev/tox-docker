@@ -2,6 +2,7 @@ import os
 import unittest
 
 import docker
+from tox_docker import _validate_link_line
 
 
 class ToxDockerLinksTest(unittest.TestCase):
@@ -48,3 +49,8 @@ class ToxDockerLinksTest(unittest.TestCase):
             "{}:{}/{}".format(postgres_name, elasticsearch_name, postgres_container.id),
         ]
         self.assertEqual(sorted(expected_elasticsearch_links), sorted(elasticsearch_links))
+
+    def test_validate_link_line_with_dangling_colon(self):
+        with self.assertRaises(ValueError) as cm:
+            _validate_link_line('some-image-name:')
+        self.assertEqual("Linked to 'some-image-name' container with dangling ':'. Remove it or add an alias.")
