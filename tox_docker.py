@@ -111,7 +111,9 @@ def tox_configure(config):
         if reader.getstring("ports"):
             image_configs[image]["ports"] = reader.getlist("ports")
         if reader.getstring("links"):
-            image_configs[image]["links"] = reader.getlist("links")
+            image_configs[image]["links"] = [
+                link for link in reader.getlist("links") if link and _validate_link_line(link)
+            ]
 
     config._docker_image_configs = image_configs
 
