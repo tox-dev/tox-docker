@@ -33,7 +33,7 @@ class ToxDockerLinksTest(unittest.TestCase):
         registry_name = registry_container.attrs["Name"]
         nginx_name = nginx_container.attrs["Name"]
         
-        httpd_links = registry_container.attrs["HostConfig"]["Links"]
+        httpd_links = httpd_container.attrs["HostConfig"]["Links"]
         registry_links = registry_container.attrs["HostConfig"]["Links"]
         nginx_links = nginx_container.attrs["HostConfig"]["Links"]
         
