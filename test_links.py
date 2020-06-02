@@ -45,7 +45,7 @@ class ToxDockerLinksTest(unittest.TestCase):
         self.assertEqual(expected_registry_links, registry_links)
         
         expected_nginx_links = [
-            "{}:{}/apache".format(httpd_name, nginx_name),
+            "{}:{}/httpd".format(httpd_name, nginx_name),
             "{}:{}/hub".format(registry_name, nginx_name)
         ]
         self.assertEqual(sorted(expected_nginx_links), sorted(nginx_links))
@@ -69,13 +69,9 @@ class ToxDockerLinksTest(unittest.TestCase):
         
         self.assertEqual(registry_container.exec_run("ping -c 1 apache")[0], 0)
         self.assertEqual(nginx_container.exec_run("curl --noproxy '*' http://hub:5000")[0], 0)
-        self.assertEqual(nginx_container.exec_run("curl --noproxy '*' http://apache")[0], 0)
+        self.assertEqual(nginx_container.exec_run("curl --noproxy '*' http://httpd")[0], 0)
 
     def test_validate_link_line_requires_alias(self):
-        for line in (
-            'some-image-name',
-            'some-image-name:',
-        ):
-            with self.assertRaises(ValueError) as cm:
-                _validate_link_line(line)
-            self.assertEqual("Linked to 'some-image-name' container without specifying an alias.")
+        with self.assertRaises(ValueError) as cm:
+            _validate_link_line('some-image-name:')
+        self.assertEqual("Link specified against 'some-image-name' with dangling ':'. Remove it or add an alias.")

@@ -132,7 +132,7 @@ def _validate_port(port_line):
 def _validate_link_line(link_line):
     name, sep, alias = link_line.partition(":")
     if sep and not alias:
-        raise ValueError("Linked to '%s' container with dangling ':'. Remove it or add an alias." % name)
+        raise ValueError("Link specified against '%s' with dangling ':'. Remove it or add an alias." % name)
     return name, alias
 
 
@@ -146,7 +146,7 @@ def _validate_link(envconfig, link_line):
             break
     if container_id is None:
         raise ValueError("container name '%s' not mapped to container id. you are responsible for proper ordering of containers by dependencies" % name)
-    return (container_id, alias)
+    return (container_id, alias or name)
 
 
 @hookimpl
