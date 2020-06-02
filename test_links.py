@@ -50,7 +50,11 @@ class ToxDockerLinksTest(unittest.TestCase):
         ]
         self.assertEqual(sorted(expected_elasticsearch_links), sorted(elasticsearch_links))
 
-    def test_validate_link_line_with_dangling_colon(self):
-        with self.assertRaises(ValueError) as cm:
-            _validate_link_line('some-image-name:')
-        self.assertEqual("Linked to 'some-image-name' container with dangling ':'. Remove it or add an alias.")
+    def test_validate_link_line_requires_alias(self):
+        for line in (
+            'some-image-name',
+            'some-image-name:',
+        ):
+            with self.assertRaises(ValueError) as cm:
+                _validate_link_line(line)
+            self.assertEqual("Linked to 'some-image-name' container without specifying an alias.")
