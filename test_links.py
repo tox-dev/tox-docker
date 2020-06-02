@@ -75,7 +75,7 @@ class ToxDockerLinksTest(unittest.TestCase):
     def test_validate_link_line_rejects_dangling_comma(self):
         for invalid_line, expected_message in (
             ('some-image-name:', "Did you mean to specify an alias? Link specified against 'some-image-name' with dangling ':' - remove the comma or add an alias."),
-            ('another-image-name:', "FAIL Did you mean to specify an alias? Link specified against 'another-image-name' with dangling ':' - remove the comma or add an alias."),
+            ('another-image-name:', "Did you mean to specify an alias? Link specified against 'another-image-name' with dangling ':' - remove the comma or add an alias."),
         ):
             with self.subTest(line=invalid_line):
                 with self.assertRaisesRegex(ValueError, re.escape(expected_message)):
