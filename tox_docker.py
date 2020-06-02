@@ -130,7 +130,7 @@ def _validate_port(port_line):
 
 
 def _validate_link_line(link_line):
-    name, sep, alias = link_line.partition(":")
+    name, sep, alias = link_line.rpartition(":")
     if sep and not alias:
         raise ValueError("Did you mean to specify an alias? Link specified against '%s' with dangling ':' - remove the comma or add an alias." % name)
     return name, alias
