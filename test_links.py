@@ -40,13 +40,13 @@ class ToxDockerLinksTest(unittest.TestCase):
         self.assertIsNone(httpd_links)
         
         expected_registry_links = [
-            "{}:{}/{}".format(httpd_name, registry_name, 'httpd')
+            "{}:{}/apache".format(httpd_name, registry_name)
         ]
         self.assertEqual(expected_registry_links, registry_links)
         
         expected_nginx_links = [
-            "{}:{}/{}".format(httpd_name, nginx_name, 'httpd'),
-            "{}:{}/{}".format(registry_name, nginx_name, 'registry')
+            "{}:{}/apache".format(httpd_name, nginx_name),
+            "{}:{}/hub".format(registry_name, nginx_name)
         ]
         self.assertEqual(sorted(expected_nginx_links), sorted(nginx_links))
 
