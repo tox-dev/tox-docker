@@ -129,8 +129,15 @@ def _validate_port(port_line):
     return (host_port, container_port_proto)
 
 
+def _validate_link_line(link_line):
+    name, sep, alias = link_line.partition(":")
+    if sep and not alias:
+        raise ValueError("Link to %s has dangling ':'. Remove it or add an alias." % name)
+    return name, alias
+
+
 def _validate_link(envconfig, link_line):
-    name, _, alias = link_line.partition(":")
+    name, alias = _validate_link_line(link_line)
     container_id = None
     for container in envconfig._docker_containers:
         image_name, _, _ = container.attrs['Config']['Image'].partition(":")
