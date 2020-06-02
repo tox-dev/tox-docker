@@ -30,7 +30,7 @@ class ToxDockerLinksTest(unittest.TestCase):
         self.assertIsNotNone(registry_container, "could not find registry container")
         self.assertIsNotNone(nginx_container, "could not find nginx container")
         
-        httpd_name = httpd_container.attrs["Name"]
+        httpd_name = httpd_container.attrs["Name"].rsplit('/')[-1]
         registry_name = registry_container.attrs["Name"]
         nginx_name = nginx_container.attrs["Name"]
         
