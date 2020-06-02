@@ -71,7 +71,7 @@ class ToxDockerLinksTest(unittest.TestCase):
         self.assertEqual(nginx_container.exec_run("curl --noproxy '*' http://hub:5000")[0], 0)
         self.assertEqual(nginx_container.exec_run("curl --noproxy '*' http://httpd")[0], 0)
 
-    def test_validate_link_line_requires_alias(self):
+    def test_validate_link_line_rejects_dangling_comma(self):
         with self.assertRaises(ValueError) as cm:
             _validate_link_line('some-image-name:')
         self.assertEqual("Link specified against 'some-image-name' with dangling ':'. Remove it or add an alias.")
