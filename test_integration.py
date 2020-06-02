@@ -2,7 +2,11 @@ from contextlib import contextmanager
 import os
 import sys
 import unittest
-from unittest.mock import patch
+
+try:
+    from unittest.mock import patch
+except:
+    from mock import patch
 
 try:
     from urllib.request import urlopen

@@ -220,7 +220,11 @@ def tox_runtest_pre(venv):
                         time.sleep(0.1)
                     elif health == "unhealthy":
                         # the health check failed after its own timeout
-                        raise HealthCheckFailed("{!r} failed health check".format(image))
+                        stop_containers(venv)
+                        # TODO in 2.0: remove str() below for py27 compatibility
+                        msg = "{!r} failed health check".format(str(image))
+                        venv.status = msg
+                        raise HealthCheckFailed(msg)
 
         name, _, tag = image.partition(":")
         gateway_ip = _get_gateway_ip(container)
@@ -282,6 +286,10 @@ def tox_runtest_pre(venv):
 
 @hookimpl
 def tox_runtest_post(venv):
+    stop_containers(venv)
+
+
+def stop_containers(venv):
     envconfig = venv.envconfig
     if not envconfig.docker:
         return

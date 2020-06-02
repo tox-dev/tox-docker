@@ -22,35 +22,14 @@ jobs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
 
-  - script: |
-      pip install --constraint tox-2.x --constraint docker-3.x .
-      pip show tox tox-docker docker
-      tox
-      # check if there are any changes to tracked files, which should fail the build
-      git diff-index --quiet HEAD --
+  - script: ./ci.sh tox-2.x docker-3.x
     displayName: 'Tox 2.x, Docker 3.x'
 
-
-  - script: |
-      pip install --constraint tox-2.x --constraint docker-4.x .
-      pip show tox tox-docker docker
-      tox
-      # check if there are any changes to tracked files, which should fail the build
-      git diff-index --quiet HEAD --
+  - script: ./ci.sh tox-2.x docker-4.x
     displayName: 'Tox 2.x, Docker 4.x'
 
-  - script: |
-      pip install --constraint tox-3.x --constraint docker-3.x .
-      pip show tox tox-docker docker
-      tox
-      # check if there are any changes to tracked files, which should fail the build
-      git diff-index --quiet HEAD --
+  - script: ./ci.sh tox-3.x docker-3.x
     displayName: 'Tox 3.x, Docker 3.x'
 
-  - script: |
-      pip install --constraint tox-3.x --constraint docker-4.x .
-      pip show tox tox-docker docker
-      tox
-      # check if there are any changes to tracked files, which should fail the build
-      git diff-index --quiet HEAD --
+  - script: ./ci.sh tox-3.x docker-4.x
     displayName: 'Tox 3.x, Docker 4.x'
