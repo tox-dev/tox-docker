@@ -103,8 +103,13 @@ Container Linking
 -----------------
 
 Containers can be linked together using the `links` key.  The `links` configuration
-should use the form `{IMAGE_NAME}` or `{IMAGE_NAME}:{ALIAS}`.  Multiple links may
-be provided as a space separated list.
+should use the form `{IMAGE_NAME}` or `{IMAGE_NAME}:{ALIAS}`.  Multiple links may be
+provided as a space separated list. If you do not provide an alias, the untagged
+image name will be used. The default aliases in the example below would be
+'memcached', 'postgres', and 'elasticsearch'. No validation is performed on the
+alias. You are responsible for providing a valid identifier. If the image name
+produces an auto-generated alias that is invalid, you will need to provide a suitable
+alternative yourself using the form `{IMAGE_NAME}:{ALIAS}` as documented above.
 
 For example::
 
