@@ -110,8 +110,8 @@ def tox_configure(config):
             })
         if reader.getstring("ports"):
             image_configs[image]["ports"] = reader.getlist("ports")
-        if reader.getstring("links"):
-            image_configs[image]["links"] = [link.strip() for link in reader.getstring("links").split(' ') if link.strip()]
+        if reader.getlist("links"):
+            image_configs[image]["links"] = [link.strip() for link in reader.getlist("links") if link.strip()]
 
     config._docker_image_configs = image_configs
 
