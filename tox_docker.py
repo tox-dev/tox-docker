@@ -110,6 +110,10 @@ def tox_configure(config):
             })
         if reader.getstring("ports"):
             image_configs[image]["ports"] = reader.getlist("ports")
+        if reader.getstring("links"):
+            image_configs[image]["links"] = [
+                link for link in reader.getlist("links") if link and _validate_link_line(link)
+            ]
 
     config._docker_image_configs = image_configs
 
@@ -125,6 +129,44 @@ def _validate_port(port_line):
         raise ValueError("protocol is not tcp or udp")
 
     return (host_port, container_port_proto)
+
+
+def _validate_link_line(link_line):
+    name, sep, alias = link_line.rpartition(":")
+    if sep:
+        if not alias:
+            raise ValueError("Did you mean to specify an alias? Link specified against '%s' with dangling ':' - remove the comma or add an alias." % name)
+    elif not name:
+        name = alias
+        alias = ''
+    return name, alias
+
+
+def _validate_link(envconfig, link_line):
+    name, alias = _validate_link_line(link_line)
+    container_id = None
+    seen = []
+    for container in envconfig._docker_containers:
+        image = container.attrs['Config']['Image']
+        seen.append(image)
+        pieces = image.split('/', 1)
+        if len(pieces) == 2:
+            registry_part, tagged_image_part = pieces
+            image_part = tagged_image_part.partition(":")[0]
+            image_name = '{}/{}'.format(registry_part, image_part)
+        elif len(pieces) == 1:
+            image_name = pieces[0].partition(":")[0]
+        else:
+            raise ValueError('Unable to parse image "%s"' % container.attrs['Config']['Image'])
+        if image_name == name:
+            container_id = container.id
+            break
+    if container_id is None:
+        raise ValueError(
+            "Link name '{}' with alias '{}' not mapped to container id. These container images have been seen: {}. You are responsible for proper ordering of containers by dependencies".format(
+            name, alias, str(seen))
+        )
+    return (container_id, alias or name)
 
 
 @hookimpl
@@ -191,6 +233,11 @@ def tox_runtest_pre(venv):
             existing_ports = set(ports.get(container_port_proto, []))
             existing_ports.add(host_port)
             ports[container_port_proto] = list(existing_ports)
+        
+        links = {}
+        for link_mapping in image_config.get("links", []):
+            container, alias = _validate_link(envconfig, link_mapping)
+            links[container] = alias
 
         action.setactivity("docker", "run {!r}".format(image))
         with action:
@@ -201,6 +248,7 @@ def tox_runtest_pre(venv):
                 ports=ports,
                 environment=environment,
                 healthcheck=healthcheck,
+                links=links,
             )
 
         envconfig._docker_containers.append(container)

@@ -98,3 +98,39 @@ custom health check.
 If you are running in a Docker-In-Docker environment, you can override the address
 used for port checking using the environment variable ``TOX_DOCKER_GATEWAY``. This
 variable should be the hostname or ip address used to connect to the container.
+
+Container Linking
+-----------------
+
+Containers can be linked together using the `links` key.  The `links` configuration
+should use the form `{IMAGE_NAME}` or `{IMAGE_NAME}:{ALIAS}`.  Multiple links may be
+provided. If you do not provide an alias, the untagged image name will be used. The
+default aliases in the contrived example below would be 'memcached', 'postgres', and
+'elasticsearch'. No validation is performed on the alias. You are responsible for
+providing a valid identifier. If the image name produces an auto-generated alias that
+is invalid, you will need to provide a suitable alternative yourself using the form
+`{IMAGE_NAME}:{ALIAS}` as documented above.
+
+For example::
+
+    docker = 
+        memcached:alpine
+        postgres:alpine
+        elasticsearch:7.7.0
+    dockerenv =
+        POSTGRES_PASSWORD=password
+        discovery.type=single-node
+        ES_JAVA_OPTS=-Xms512m -Xmx512m
+    [docker:postgres:alpine]
+    links = memcached
+    [docker:elasticsearch:7.7.0]
+    links =
+        memcached:cache
+        postgres
+
+Note: No dependency resolution is performed. You must define containers in proper
+dependency order.  An error will be raised if a link references a container that has
+not yet been processed.  Notice in the example above that `postgres` is listed after
+`memcached`.  And `elasticsearch` is listed after both `memcached` and `postgres`.
+It would be an error to list `postgres` before `memcached` and likewise for placing
+`elasticsearch` before either `postgres` or `memcached`.
