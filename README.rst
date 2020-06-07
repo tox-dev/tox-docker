@@ -135,6 +135,13 @@ not yet been processed.  Notice in the example above that `postgres` is listed a
 It would be an error to list `postgres` before `memcached` and likewise for placing
 `elasticsearch` before either `postgres` or `memcached`.
 
+Python Version
+--------------
+
+Tox-docker requires tox to be run in Python 3.6 or newer. Older versions of
+tox-docker may work with older versions of Python, but these configurations
+are no longer supported.
+
 
 ===========
 Development

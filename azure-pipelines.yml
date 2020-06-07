@@ -10,10 +10,6 @@ jobs:
         python.version: '3.7'
       Python36:
         python.version: '3.6'
-      Python35:
-        python.version: '3.5'
-      Python27:
-        python.version: '2.7'
     maxParallel: 4
 
   steps:

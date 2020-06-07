@@ -70,9 +70,7 @@ def tox_configure(config):  # noqa: C901
         try:
             return float(val)
         except ValueError:
-            msg = "{!r} is not a number (for {} in [{}])".format(
-                val, key, reader.section_name
-            )
+            msg = f"{val!r} is not a number (for {key} in [{reader.section_name}])"
             raise ValueError(msg)
 
     def gettime(reader, key):
@@ -82,9 +80,7 @@ def tox_configure(config):  # noqa: C901
         raw = getfloat(reader, key)
         val = int(raw)
         if val != raw:
-            msg = "{!r} is not an int (for {} in [{}])".format(
-                val, key, reader.section_name
-            )
+            msg = f"{val!r} is not an int (for {key} in [{reader.section_name}])"
             raise ValueError(msg)
         return val
 
@@ -162,12 +158,12 @@ def _validate_link(envconfig, link_line):
         if len(pieces) == 2:
             registry_part, tagged_image_part = pieces
             image_part = tagged_image_part.partition(":")[0]
-            image_name = "{}/{}".format(registry_part, image_part)
+            image_name = f"{registry_part}/{image_part}"
         elif len(pieces) == 1:
             image_name = pieces[0].partition(":")[0]
         else:
             raise ValueError(
-                'Unable to parse image "%s"' % container.attrs["Config"]["Image"]
+                f"Unable to parse image \"{container.attrs['Config']['Image']}\""
             )
         if image_name == name:
             container_id = container.id
@@ -204,15 +200,13 @@ def tox_runtest_pre(venv):  # noqa: C901
     for image in envconfig.docker:
         name, _, tag = image.partition(":")
         if name in seen:
-            raise ValueError(
-                "Docker image {!r} is specified more than once".format(name)
-            )
+            raise ValueError(f"Docker image {name!r} is specified more than once")
         seen.add(name)
 
         try:
             docker.images.get(image)
         except ImageNotFound:
-            action.setactivity("docker", "pull {!r}".format(image))
+            action.setactivity("docker", f"pull {image!r}")
             with action:
                 docker.images.pull(name, tag=tag or None)
 
@@ -254,7 +248,7 @@ def tox_runtest_pre(venv):  # noqa: C901
             container, alias = _validate_link(envconfig, link_mapping)
             links[container] = alias
 
-        action.setactivity("docker", "run {!r}".format(image))
+        action.setactivity("docker", f"run {image!r}")
         with action:
             container = docker.containers.run(
                 image,
@@ -272,7 +266,7 @@ def tox_runtest_pre(venv):  # noqa: C901
     for container in envconfig._docker_containers:
         image = container.attrs["Config"]["Image"]
         if "Health" in container.attrs["State"]:
-            action.setactivity("docker", "health check: {!r}".format(image))
+            action.setactivity("docker", f"health check: {image!r}")
             with action:
                 while True:
                     container.reload()
@@ -284,8 +278,7 @@ def tox_runtest_pre(venv):  # noqa: C901
                     elif health == "unhealthy":
                         # the health check failed after its own timeout
                         stop_containers(venv)
-                        # TODO in 2.0: remove str() below for py27 compatibility
-                        msg = "{!r} failed health check".format(str(image))
+                        msg = f"{image!r} failed health check"
                         venv.status = msg
                         raise HealthCheckFailed(msg)
 
@@ -305,15 +298,15 @@ def tox_runtest_pre(venv):  # noqa: C901
             else:
                 continue
 
-            envvar = escape_env_var("{}_HOST".format(name,))
+            envvar = escape_env_var(f"{name}_HOST")
             venv.envconfig.setenv[envvar] = gateway_ip
 
-            envvar = escape_env_var("{}_{}_PORT".format(name, containerport,))
+            envvar = escape_env_var(f"{name}_{containerport}_PORT")
             venv.envconfig.setenv[envvar] = hostport
 
             # TODO: remove in 2.0
             _, proto = containerport.split("/")
-            envvar = escape_env_var("{}_{}".format(name, containerport,))
+            envvar = escape_env_var(f"{name}_{containerport}")
             venv.envconfig.setenv[envvar] = hostport
 
             _, proto = containerport.split("/")
@@ -335,9 +328,7 @@ def tox_runtest_pre(venv):  # noqa: C901
                     sock.close()
                     break
             else:
-                raise Exception(
-                    "Never got answer on port {} from {}".format(containerport, name)
-                )
+                raise Exception(f"Never got answer on port {containerport} from {name}")
 
 
 @hookimpl
@@ -353,7 +344,7 @@ def stop_containers(venv):
     action = _newaction(venv, "docker")
 
     for container in envconfig._docker_containers:
-        action.setactivity("docker", "remove '{}' (forced)".format(container.short_id))
+        action.setactivity("docker", f"remove '{container.short_id}' (forced)")
         with action:
             container.remove(v=True, force=True)
 

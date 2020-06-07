@@ -1,19 +1,11 @@
 from contextlib import contextmanager
+from unittest.mock import patch
+from urllib.request import urlopen
 import os
 import sys
 import unittest
 
 from tox_docker import _get_gateway_ip
-
-try:
-    from unittest.mock import patch
-except ImportError:
-    from mock import patch
-
-try:
-    from urllib.request import urlopen
-except ImportError:
-    from urllib2 import urlopen
 
 
 class ToxDockerIntegrationTest(unittest.TestCase):
@@ -47,9 +39,7 @@ class ToxDockerIntegrationTest(unittest.TestCase):
 
     def test_it_exposes_the_port(self):
         # the nginx image we use exposes port 80
-        url = "http://{host}:{port}/".format(
-            host=os.environ["NGINX_HOST"], port=os.environ["NGINX_80_TCP"]
-        )
+        url = f"http://{os.environ['NGINX_HOST']}:{os.environ['NGINX_80_TCP']}/"
         response = urlopen(url)
         self.assertEqual(200, response.getcode())
         self.assertIn("Thank you for using nginx.", str(response.read()))

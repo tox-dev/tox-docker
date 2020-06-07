@@ -28,6 +28,4 @@ if volume_ids - old_volume_ids:
     different.append("volumes")
 
 if different:
-    sys.exit(
-        "FAIL: {} are different from before tox-docker ran".format(", ".join(different))
-    )
+    sys.exit(f"FAIL: {', '.join(different)} are different from before tox-docker ran")

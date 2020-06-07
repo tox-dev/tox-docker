@@ -1,9 +1,7 @@
 import re
-import sys
 import unittest
 
 import docker
-import pytest
 
 from tox_docker import _validate_link_line
 
@@ -41,7 +39,7 @@ class ToxDockerLinksTest(unittest.TestCase):
         self.assertIsNotNone(nginx_container, "could not find nginx container")
 
         httpd_name = httpd_container.attrs["Name"]
-        registry_name = "/{}".format(registry_container.attrs["Name"].rsplit("/")[-1])
+        registry_name = f"/{registry_container.attrs['Name'].rsplit('/')[-1]}"
         nginx_name = nginx_container.attrs["Name"]
 
         httpd_links = httpd_container.attrs["HostConfig"]["Links"]
@@ -50,12 +48,12 @@ class ToxDockerLinksTest(unittest.TestCase):
 
         self.assertIsNone(httpd_links)
 
-        expected_registry_links = ["{}:{}/apache".format(httpd_name, registry_name)]
+        expected_registry_links = [f"{httpd_name}:{registry_name}/apache"]
         self.assertEqual(expected_registry_links, registry_links)
 
         expected_nginx_links = [
-            "{}:{}/httpd".format(httpd_name, nginx_name),
-            "{}:{}/hub".format(registry_name, nginx_name),
+            f"{httpd_name}:{nginx_name}/httpd",
+            f"{registry_name}:{nginx_name}/hub",
         ]
         self.assertEqual(sorted(expected_nginx_links), sorted(nginx_links))
 
@@ -90,9 +88,6 @@ class ToxDockerLinksTest(unittest.TestCase):
             nginx_container.exec_run("curl --noproxy '*' http://httpd")[0], 0
         )
 
-    @pytest.mark.skipif(
-        sys.version_info < (3, 4), reason="subTest does not work in py27"
-    )
     def test_validate_link_line(self):
         for line, expected_name, expected_alias in (
             (
@@ -108,9 +103,6 @@ class ToxDockerLinksTest(unittest.TestCase):
                 self.assertEqual(name, expected_name)
                 self.assertEqual(alias, expected_alias)
 
-    @pytest.mark.skipif(
-        sys.version_info < (3, 4), reason="subTest does not work in py27"
-    )
     def test_validate_link_line_rejects_dangling_comma(self):
         for invalid_line, expected_message in (
             (
