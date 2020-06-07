@@ -1,19 +1,9 @@
-import unittest
+import pytest
 
-import docker
+from tox_docker.tests.util import find_container
 
 
-class ToxDockerHealthCheckTest(unittest.TestCase):
-    def test_it_waits_for_health_check_to_succeed(self):
-        # the redis instance takes a few seconds to ack its healthcheck;
-        # this is sloppy and might have false positives, but it should
-        # have no false negatives (if it fails, tox-docker _is_ broken)
-        client = docker.from_env(version="auto")
-        redis_container = None
-        for container in client.containers.list():
-            if "redis" in container.attrs["Config"]["Image"]:
-                redis_container = container
-                break
-
-        self.assertIsNotNone(redis_container, "could not find redis container")
-        self.assertEqual("healthy", redis_container.attrs["State"]["Health"]["Status"])
+@pytest.mark.parametrize("instance_name", ["healthcheck-builtin", "healthcheck-custom"])
+def test_the_image_is_healthy_builtin(instance_name):
+    container = find_container("healthcheck-builtin")
+    assert container.attrs["State"]["Health"]["Status"] == "healthy"
