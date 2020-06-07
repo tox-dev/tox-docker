@@ -304,11 +304,6 @@ def tox_runtest_pre(venv):  # noqa: C901
             envvar = escape_env_var(f"{name}_{containerport}_PORT")
             venv.envconfig.setenv[envvar] = hostport
 
-            # TODO: remove in 2.0
-            _, proto = containerport.split("/")
-            envvar = escape_env_var(f"{name}_{containerport}")
-            venv.envconfig.setenv[envvar] = hostport
-
             _, proto = containerport.split("/")
             if proto == "udp":
                 continue
