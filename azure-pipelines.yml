@@ -22,6 +22,12 @@ jobs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
 
+  - script: |
+      pip install tox
+      pip show tox
+      tox -e style
+    displayName: 'Style Check'
+
   - script: ./ci.sh tox-2.x docker-3.x
     displayName: 'Tox 2.x, Docker 3.x'
 

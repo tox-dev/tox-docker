@@ -3,23 +3,18 @@ import sys
 
 import docker
 
-
 client = docker.from_env(version="auto")
 envdir = os.environ["TOX_ENV_DIR"]
 
-container_ids = set([
-    container.attrs["Id"].strip()
-    for container in client.containers.list()
-])
-volume_ids = set([
-    volume.attrs["Name"].strip()
-    for volume in client.volumes.list()
-])
+container_ids = set(
+    [container.attrs["Id"].strip() for container in client.containers.list()]
+)
+volume_ids = set([volume.attrs["Name"].strip() for volume in client.volumes.list()])
 
 with open(envdir + "/containers.list", "r") as fp:
-    old_container_ids = set([l.strip() for l in fp if l.strip()])
+    old_container_ids = set([line.strip() for line in fp if line.strip()])
 with open(envdir + "/volumes.list", "r") as fp:
-    old_volume_ids = set([l.strip() for l in fp if l.strip()])
+    old_volume_ids = set([line.strip() for line in fp if line.strip()])
 
 # check if any new containers exist that didn't exist before we
 # started; we can't check for identity, since the start script is
@@ -33,4 +28,6 @@ if volume_ids - old_volume_ids:
     different.append("volumes")
 
 if different:
-    sys.exit("FAIL: {} are different from before tox-docker ran".format(", ".join(different)))
+    sys.exit(
+        "FAIL: {} are different from before tox-docker ran".format(", ".join(different))
+    )

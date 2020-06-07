@@ -3,12 +3,11 @@ import socket
 import sys
 import time
 
+from docker.errors import ImageNotFound
 from tox import hookimpl
 from tox.config import SectionReader
-from docker.errors import ImageNotFound
 import docker as docker_module
 import py
-
 
 NANOSECONDS = 1000000000
 
@@ -32,10 +31,10 @@ def escape_env_var(varname):
     """
     varname = list(varname.upper())
     if not varname[0].isalpha():
-        varname[0] = '_'
+        varname[0] = "_"
     for i, c in enumerate(varname):
-        if not c.isalnum() and c != '_':
-            varname[i] = '_'
+        if not c.isalnum() and c != "_":
+            varname[i] = "_"
     return "".join(varname)
 
 
@@ -48,21 +47,21 @@ def _newaction(venv, message):
 
 
 def _get_gateway_ip(container):
-    gateway = os.getenv('TOX_DOCKER_GATEWAY')
+    gateway = os.getenv("TOX_DOCKER_GATEWAY")
     if gateway:
         ip = socket.gethostbyname(gateway)
     elif sys.platform == "darwin":
-        # per https://docs.docker.com/v17.12/docker-for-mac/networking/#use-cases-and-workarounds,
-        # there is no bridge network available in Docker for Mac, and exposed ports are made
-        # available on localhost (but 0.0.0.0 works just as well)
+        # https://docs.docker.com/docker-for-mac/networking/#use-cases-and-workarounds:
+        # there is no bridge network available in Docker for Mac, and exposed ports are
+        # made available on localhost (but 0.0.0.0 works just as well)
         ip = "0.0.0.0"
     else:
         ip = container.attrs["NetworkSettings"]["Gateway"] or "0.0.0.0"
     return ip
 
 
-@hookimpl
-def tox_configure(config):
+@hookimpl  # noqa: C901
+def tox_configure(config):  # noqa: C901
     def getfloat(reader, key):
         val = reader.getstring(key)
         if val is None:
@@ -101,18 +100,24 @@ def tox_configure(config):
         _, _, image = section.partition(":")
         image_configs[image] = {}
         if reader.getstring("healthcheck_cmd"):
-            image_configs[image].update({
-                "healthcheck_cmd": reader.getargv("healthcheck_cmd"),
-                "healthcheck_interval": gettime(reader, "healthcheck_interval"),
-                "healthcheck_timeout": gettime(reader, "healthcheck_timeout"),
-                "healthcheck_retries": getint(reader, "healthcheck_retries"),
-                "healthcheck_start_period": gettime(reader, "healthcheck_start_period"),
-            })
+            image_configs[image].update(
+                {
+                    "healthcheck_cmd": reader.getargv("healthcheck_cmd"),
+                    "healthcheck_interval": gettime(reader, "healthcheck_interval"),
+                    "healthcheck_timeout": gettime(reader, "healthcheck_timeout"),
+                    "healthcheck_retries": getint(reader, "healthcheck_retries"),
+                    "healthcheck_start_period": gettime(
+                        reader, "healthcheck_start_period"
+                    ),
+                }
+            )
         if reader.getstring("ports"):
             image_configs[image]["ports"] = reader.getlist("ports")
         if reader.getstring("links"):
             image_configs[image]["links"] = [
-                link for link in reader.getlist("links") if link and _validate_link_line(link)
+                link
+                for link in reader.getlist("links")
+                if link and _validate_link_line(link)
             ]
 
     config._docker_image_configs = image_configs
@@ -135,10 +140,14 @@ def _validate_link_line(link_line):
     name, sep, alias = link_line.rpartition(":")
     if sep:
         if not alias:
-            raise ValueError("Did you mean to specify an alias? Link specified against '%s' with dangling ':' - remove the comma or add an alias." % name)
+            msg = (
+                "Did you mean to specify an alias? Link specified against '%s' "
+                "with dangling ':' - remove the comma or add an alias."
+            ) % name
+            raise ValueError(msg)
     elif not name:
         name = alias
-        alias = ''
+        alias = ""
     return name, alias
 
 
@@ -147,30 +156,34 @@ def _validate_link(envconfig, link_line):
     container_id = None
     seen = []
     for container in envconfig._docker_containers:
-        image = container.attrs['Config']['Image']
+        image = container.attrs["Config"]["Image"]
         seen.append(image)
-        pieces = image.split('/', 1)
+        pieces = image.split("/", 1)
         if len(pieces) == 2:
             registry_part, tagged_image_part = pieces
             image_part = tagged_image_part.partition(":")[0]
-            image_name = '{}/{}'.format(registry_part, image_part)
+            image_name = "{}/{}".format(registry_part, image_part)
         elif len(pieces) == 1:
             image_name = pieces[0].partition(":")[0]
         else:
-            raise ValueError('Unable to parse image "%s"' % container.attrs['Config']['Image'])
+            raise ValueError(
+                'Unable to parse image "%s"' % container.attrs["Config"]["Image"]
+            )
         if image_name == name:
             container_id = container.id
             break
     if container_id is None:
-        raise ValueError(
-            "Link name '{}' with alias '{}' not mapped to container id. These container images have been seen: {}. You are responsible for proper ordering of containers by dependencies".format(
-            name, alias, str(seen))
-        )
+        msg = (
+            "Link name '{}' with alias '{}' not mapped to container id. These "
+            "container images have been seen: {}. You are responsible for proper "
+            "ordering of containers by dependencies"
+        ).format(name, alias, str(seen))
+        raise ValueError(msg)
     return (container_id, alias or name)
 
 
-@hookimpl
-def tox_runtest_pre(venv):
+@hookimpl  # noqa: C901
+def tox_runtest_pre(venv):  # noqa: C901
     envconfig = venv.envconfig
     if not envconfig.docker:
         return
@@ -212,11 +225,13 @@ def tox_runtest_pre(venv):
         hc_retries = image_config.get("healthcheck_retries")
         hc_start_period = image_config.get("healthcheck_start_period")
 
-        if hc_cmd is not None \
-           and hc_interval is not None \
-           and hc_timeout is not None \
-           and hc_retries is not None \
-           and hc_start_period is not None:
+        if (
+            hc_cmd is not None
+            and hc_interval is not None
+            and hc_timeout is not None
+            and hc_retries is not None
+            and hc_start_period is not None
+        ):
             healthcheck = {
                 "test": ["CMD-SHELL"] + hc_cmd,
                 "interval": hc_interval,
@@ -233,7 +248,7 @@ def tox_runtest_pre(venv):
             existing_ports = set(ports.get(container_port_proto, []))
             existing_ports.add(host_port)
             ports[container_port_proto] = list(existing_ports)
-        
+
         links = {}
         for link_mapping in image_config.get("links", []):
             container, alias = _validate_link(envconfig, link_mapping)
@@ -276,7 +291,9 @@ def tox_runtest_pre(venv):
 
         name, _, tag = image.partition(":")
         gateway_ip = _get_gateway_ip(container)
-        for containerport, hostports in container.attrs["NetworkSettings"]["Ports"].items():
+        for containerport, hostports in container.attrs["NetworkSettings"][
+            "Ports"
+        ].items():
             if hostports is None:
                 # The port is exposed by the container, but not published.
                 continue
@@ -288,23 +305,15 @@ def tox_runtest_pre(venv):
             else:
                 continue
 
-            envvar = escape_env_var("{}_HOST".format(
-                name,
-            ))
+            envvar = escape_env_var("{}_HOST".format(name,))
             venv.envconfig.setenv[envvar] = gateway_ip
 
-            envvar = escape_env_var("{}_{}_PORT".format(
-                name,
-                containerport,
-            ))
+            envvar = escape_env_var("{}_{}_PORT".format(name, containerport,))
             venv.envconfig.setenv[envvar] = hostport
 
             # TODO: remove in 2.0
             _, proto = containerport.split("/")
-            envvar = escape_env_var("{}_{}".format(
-                name,
-                containerport,
-            ))
+            envvar = escape_env_var("{}_{}".format(name, containerport,))
             venv.envconfig.setenv[envvar] = hostport
 
             _, proto = containerport.split("/")
@@ -317,8 +326,7 @@ def tox_runtest_pre(venv):
             while (time.time() - start) < 30:
                 try:
                     sock = socket.create_connection(
-                        address=(gateway_ip, int(hostport)),
-                        timeout=0.1,
+                        address=(gateway_ip, int(hostport)), timeout=0.1,
                     )
                 except socket.error:
                     time.sleep(0.1)

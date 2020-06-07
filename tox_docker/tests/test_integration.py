@@ -3,17 +3,17 @@ import os
 import sys
 import unittest
 
+from tox_docker import _get_gateway_ip
+
 try:
     from unittest.mock import patch
-except:
+except ImportError:
     from mock import patch
 
 try:
     from urllib.request import urlopen
 except ImportError:
     from urllib2 import urlopen
-
-from tox_docker import _get_gateway_ip
 
 
 class ToxDockerIntegrationTest(unittest.TestCase):
@@ -29,8 +29,7 @@ class ToxDockerIntegrationTest(unittest.TestCase):
         self.assertIn("NGINX_80_TCP", os.environ)
         self.assertIn("NGINX_80_TCP_PORT", os.environ)
         self.assertEqual(
-            os.environ["NGINX_80_TCP_PORT"],
-            os.environ["NGINX_80_TCP"],
+            os.environ["NGINX_80_TCP_PORT"], os.environ["NGINX_80_TCP"],
         )
 
         # the test image we use exposes TCP port 1234 and UDP port 5678
@@ -48,7 +47,9 @@ class ToxDockerIntegrationTest(unittest.TestCase):
 
     def test_it_exposes_the_port(self):
         # the nginx image we use exposes port 80
-        url = "http://{host}:{port}/".format(host=os.environ["NGINX_HOST"], port=os.environ["NGINX_80_TCP"])
+        url = "http://{host}:{port}/".format(
+            host=os.environ["NGINX_HOST"], port=os.environ["NGINX_80_TCP"]
+        )
         response = urlopen(url)
         self.assertEqual(200, response.getcode())
         self.assertIn("Thank you for using nginx.", str(response.read()))
@@ -65,10 +66,10 @@ def sys_platform_as(value):
 
 
 class MacOSTest(unittest.TestCase):
-
     def test_gateway_ip_is_zero_zero_zero_zero(self):
         class NotARealContainer(object):
-            attrs = {"NetworkSettings": {"Gateway": "1.2.3.4", }}
+            attrs = {"NetworkSettings": {"Gateway": "1.2.3.4"}}
+
         container = NotARealContainer()
 
         with sys_platform_as("linux2"):
@@ -81,26 +82,28 @@ class MacOSTest(unittest.TestCase):
 class GatewayIpTest(unittest.TestCase):
     def test_gateway_ip_env_override(self):
         class NotARealContainer(object):
-            attrs = {"NetworkSettings": {"Gateway": "1.2.3.4", }}
+            attrs = {"NetworkSettings": {"Gateway": "1.2.3.4"}}
+
         container = NotARealContainer()
 
         with sys_platform_as("linux2"):
             self.assertEqual(_get_gateway_ip(container), "1.2.3.4")
 
-            with patch.dict('os.environ', {'TOX_DOCKER_GATEWAY': '192.168.1.1'}):
+            with patch.dict("os.environ", {"TOX_DOCKER_GATEWAY": "192.168.1.1"}):
                 self.assertEqual(_get_gateway_ip(container), "192.168.1.1")
 
             self.assertEqual(_get_gateway_ip(container), "1.2.3.4")
 
     def test_gateway_host_env_override(self):
         class NotARealContainer(object):
-            attrs = {"NetworkSettings": {"Gateway": "1.2.3.4", }}
+            attrs = {"NetworkSettings": {"Gateway": "1.2.3.4"}}
+
         container = NotARealContainer()
 
         with sys_platform_as("linux2"):
             self.assertEqual(_get_gateway_ip(container), "1.2.3.4")
 
-            with patch.dict('os.environ', {'TOX_DOCKER_GATEWAY': 'localhost'}):
-                self.assertIn(_get_gateway_ip(container), ['127.0.0.1', '::1'])
+            with patch.dict("os.environ", {"TOX_DOCKER_GATEWAY": "localhost"}):
+                self.assertIn(_get_gateway_ip(container), ["127.0.0.1", "::1"])
 
             self.assertEqual(_get_gateway_ip(container), "1.2.3.4")

@@ -5,7 +5,6 @@ from tox_docker import escape_env_var
 
 
 class ToxDockerRegistryTest(unittest.TestCase):
-
     def test_it_sets_automatic_env_vars(self):
         # the nginx image we use exposes port 80
         self.assertIn("DOCKER_IO_LIBRARY_NGINX_HOST", os.environ)
