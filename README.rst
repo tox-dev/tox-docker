@@ -67,10 +67,6 @@ The host name for each service is also exposed via environment as
 ``<image-basename>_HOST``, which is ``POSTGRES_HOST`` and ``TELEGRAF_HOST`` for
 the two examples above.
 
-*Deprecation Note:* In older versions of tox-docker, the port was exposed as
-``<image-basename>-<exposed-port>-<protocol>``. This additional environment
-variable is deprecated, but will be supported until tox-docker 2.0.
-
 Health Checking
 ---------------
 
@@ -113,7 +109,7 @@ is invalid, you will need to provide a suitable alternative yourself using the f
 
 For example::
 
-    docker = 
+    docker =
         memcached:alpine
         postgres:alpine
         elasticsearch:7.7.0
