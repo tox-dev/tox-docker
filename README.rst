@@ -134,3 +134,28 @@ not yet been processed.  Notice in the example above that `postgres` is listed a
 `memcached`.  And `elasticsearch` is listed after both `memcached` and `postgres`.
 It would be an error to list `postgres` before `memcached` and likewise for placing
 `elasticsearch` before either `postgres` or `memcached`.
+
+Python Version
+--------------
+
+Tox-docker requires tox to be run in Python 3.6 or newer. Older versions of
+tox-docker may work with older versions of Python, but these configurations
+are no longer supported.
+
+
+===========
+Development
+===========
+
+Code Style
+----------
+
+Tox-docker uses black and isort to enforce style standards on the codebase.
+The formatting is orindaily done for you via `pre-commit
+<https://pre-commit.com/>`_, and is enforced via the ``tox -e style`` build.
+To work on tox-docker locally with pre-commit, `pip install -r
+dev-requirements.txt`` and ``pre-commit install`` to set up the git hooks;
+subsequently, when you ``git commit``, the formatter will be run. If the
+changed files are not conformant, the hook will have reformatted them and
+you may need to run pre-commit again. You can run ``pre-commit run --files
+*.py`` to manually run the formatters.

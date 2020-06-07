@@ -2,18 +2,13 @@ import os
 
 import docker
 
-
 client = docker.from_env(version="auto")
 envdir = os.environ["TOX_ENV_DIR"]
 
 container_ids = [
-    container.attrs["Id"].strip()
-    for container in client.containers.list()
+    container.attrs["Id"].strip() for container in client.containers.list()
 ]
-volume_ids = [
-    volume.attrs["Name"].strip()
-    for volume in client.volumes.list()
-]
+volume_ids = [volume.attrs["Name"].strip() for volume in client.volumes.list()]
 
 with open(envdir + "/containers.list", "w") as fp:
     for container in container_ids:
