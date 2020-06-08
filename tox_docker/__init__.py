@@ -121,7 +121,7 @@ def tox_configure(config):  # noqa: C901
             container_configs[container_name]["environment"] = env
 
         if reader.getstring("healthcheck_cmd"):
-            container_configs[container_name]["healthcheck_cmd"] = reader.getargv(
+            container_configs[container_name]["healthcheck_cmd"] = reader.getstring(
                 "healthcheck_cmd"
             )
         if reader.getstring("healthcheck_interval"):
@@ -217,7 +217,7 @@ def tox_runtest_pre(venv):  # noqa: C901
 
         healthcheck = {}
         if hc_cmd:
-            healthcheck["test"] = ["CMD-SHELL"] + hc_cmd
+            healthcheck["test"] = ["CMD-SHELL", hc_cmd]
         if hc_interval:
             healthcheck["interval"] = hc_interval
         if hc_timeout:
