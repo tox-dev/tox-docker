@@ -304,27 +304,6 @@ def tox_runtest_pre(venv):  # noqa: C901
             envvar = escape_env_var(f"{container_name}_{containerport}_PORT")
             venv.envconfig.setenv[envvar] = hostport
 
-            _, proto = containerport.split("/")
-            if proto == "udp":
-                continue
-
-            # mostly-busy-loop until we can connect to that port; that
-            # will be our signal that the container is ready (meh)
-            start = time.time()
-            while (time.time() - start) < 30:
-                try:
-                    sock = socket.create_connection(
-                        address=(gateway_ip, int(hostport)), timeout=0.1,
-                    )
-                except socket.error:
-                    time.sleep(0.1)
-                else:
-                    sock.shutdown(socket.SHUT_RDWR)
-                    sock.close()
-                    break
-            else:
-                raise Exception(f"Never got answer on port {containerport} from {name}")
-
 
 @hookimpl
 def tox_runtest_post(venv):

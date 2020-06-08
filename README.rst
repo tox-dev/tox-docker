@@ -163,6 +163,17 @@ Tox-docker requires tox to be run in Python 3.6 or newer. Older versions of
 tox-docker may work with older versions of Python, but these configurations
 are no longer supported.
 
+==========
+Change Log
+==========
+
+* 2.0.0
+    * Support Python 3.6 and newer only
+    * Move all container configuration to ``[docker:container-name]``
+      sections
+    * Don't infer container health by pinging TCP ports; only the
+      healthcheck indicates a container's health
+
 
 ===========
 Development
