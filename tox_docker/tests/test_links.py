@@ -1,46 +1,22 @@
-import re
 import unittest
 
-import docker
+import pytest
 
 from tox_docker import _validate_link_line
+from tox_docker.tests.util import find_container
 
 
 class ToxDockerLinksTest(unittest.TestCase):
     def test_links_created(self):
-        client = docker.from_env(version="auto")
-        httpd_container = None
-        registry_container = None
-        nginx_container = None
-        for container in client.containers.list():
-            if (
-                httpd_container is None
-                and "httpd" in container.attrs["Config"]["Image"]
-            ):
-                httpd_container = container
+        httpd_container = find_container("links-httpd")
+        registry_container = find_container("links-registry")
+        nginx_container = find_container("links-nginx")
 
-            if (
-                registry_container is None
-                and "registry" in container.attrs["Config"]["Image"]
-            ):
-                registry_container = container
-
-            if (
-                nginx_container is None
-                and "nginx" in container.attrs["Config"]["Image"]
-            ):
-                nginx_container = container
-
-            if all([httpd_container, registry_container, nginx_container]):
-                break
-
-        self.assertIsNotNone(httpd_container, "could not find httpd container")
-        self.assertIsNotNone(registry_container, "could not find registry container")
-        self.assertIsNotNone(nginx_container, "could not find nginx container")
-
-        httpd_name = httpd_container.attrs["Name"]
-        registry_name = f"/{registry_container.attrs['Name'].rsplit('/')[-1]}"
-        nginx_name = nginx_container.attrs["Name"]
+        # TODO: figure out why docker prepends / to the Name attribute,
+        # and fix the handling here if we're doing something wrong...
+        httpd_name = httpd_container.attrs["Name"].lstrip("/")
+        registry_name = registry_container.attrs["Name"].lstrip("/")
+        nginx_name = nginx_container.attrs["Name"].lstrip("/")
 
         httpd_links = httpd_container.attrs["HostConfig"]["Links"]
         registry_links = registry_container.attrs["HostConfig"]["Links"]
@@ -48,34 +24,18 @@ class ToxDockerLinksTest(unittest.TestCase):
 
         self.assertIsNone(httpd_links)
 
-        expected_registry_links = [f"{httpd_name}:{registry_name}/apache"]
+        expected_registry_links = [f"/{httpd_name}:/{registry_name}/apache"]
         self.assertEqual(expected_registry_links, registry_links)
 
         expected_nginx_links = [
-            f"{httpd_name}:{nginx_name}/httpd",
-            f"{registry_name}:{nginx_name}/hub",
+            f"/{httpd_name}:/{nginx_name}/{httpd_name}",
+            f"/{registry_name}:/{nginx_name}/hub",
         ]
         self.assertEqual(sorted(expected_nginx_links), sorted(nginx_links))
 
     def test_links_work(self):
-        client = docker.from_env(version="auto")
-        registry_container = None
-        nginx_container = None
-        for container in client.containers.list():
-            if (
-                registry_container is None
-                and "registry" in container.attrs["Config"]["Image"]
-            ):
-                registry_container = container
-
-            if (
-                nginx_container is None
-                and "nginx" in container.attrs["Config"]["Image"]
-            ):
-                nginx_container = container
-
-            if all([registry_container, nginx_container]):
-                break
+        registry_container = find_container("links-registry")
+        nginx_container = find_container("links-nginx")
 
         self.assertIsNotNone(registry_container)
         self.assertIsNotNone(nginx_container)
@@ -85,39 +45,17 @@ class ToxDockerLinksTest(unittest.TestCase):
             nginx_container.exec_run("curl --noproxy '*' http://hub:5000")[0], 0
         )
         self.assertEqual(
-            nginx_container.exec_run("curl --noproxy '*' http://httpd")[0], 0
+            nginx_container.exec_run("curl --noproxy '*' http://links-httpd")[0], 0
         )
 
     def test_validate_link_line(self):
-        for line, expected_name, expected_alias in (
-            (
-                "some.fake.domain:1234/some/image:voodoo",
-                "some.fake.domain:1234/some/image",
-                "voodoo",
-            ),
-            ("httpd:apache", "httpd", "apache"),
-            ("httpd", "httpd", ""),
-        ):
-            with self.subTest(line=line):
-                name, alias = _validate_link_line(line)
-                self.assertEqual(name, expected_name)
-                self.assertEqual(alias, expected_alias)
+        names = {"httpd"}
+        assert _validate_link_line("httpd:apache", names) == ("httpd", "apache")
+        assert _validate_link_line("httpd", names) == ("httpd", "httpd")
 
     def test_validate_link_line_rejects_dangling_comma(self):
-        for invalid_line, expected_message in (
-            (
-                "some-image-name:",
-                "Did you mean to specify an alias? Link specified against "
-                "'some-image-name' with dangling ':' - remove the comma or "
-                "add an alias.",
-            ),
-            (
-                "another-image-name:",
-                "Did you mean to specify an alias? Link specified against "
-                "'another-image-name' with dangling ':' - remove the comma or "
-                "add an alias.",
-            ),
-        ):
-            with self.subTest(line=invalid_line):
-                with self.assertRaisesRegex(ValueError, re.escape(expected_message)):
-                    _validate_link_line(invalid_line)
+        names = {"httpd"}
+        with pytest.raises(ValueError):
+            _validate_link_line("httpd:", names)
+        with pytest.raises(ValueError):
+            _validate_link_line("httpd", set())

@@ -1,4 +1,5 @@
 import os
+import re
 import socket
 import sys
 import time
@@ -9,7 +10,8 @@ from tox.config import SectionReader
 import docker as docker_module
 import py
 
-NANOSECONDS = 1000000000
+# nanoseconds in a second; named "SECOND" so that "1.5 * SECOND" makes sense
+SECOND = 1000000000
 
 
 class HealthCheckFailed(Exception):
@@ -74,7 +76,7 @@ def tox_configure(config):  # noqa: C901
             raise ValueError(msg)
 
     def gettime(reader, key):
-        return int(getfloat(reader, key) * NANOSECONDS)
+        return int(getfloat(reader, key) * SECOND)
 
     def getint(reader, key):
         raw = getfloat(reader, key)
@@ -84,39 +86,72 @@ def tox_configure(config):  # noqa: C901
             raise ValueError(msg)
         return val
 
+    def getenvdict(reader, key):
+        environment = {}
+        for value in reader.getlist(key):
+            envvar, _, value = value.partition("=")
+            environment[envvar] = value
+        return environment
+
     inipath = str(config.toxinipath)
     iniparser = py.iniconfig.IniConfig(inipath)
 
-    image_configs = {}
+    container_configs = {}
+    for section in iniparser.sections:
+        if not section.startswith("docker:"):
+            continue
+
+        _, _, container_name = section.partition(":")
+        if not re.match(r"^[a-zA-Z][-_.a-zA-Z0-9]+$", container_name):
+            raise ValueError(f"{container_name!r} is not a valid container name")
+
+        # populated in the next loop
+        container_configs[container_name] = {}
+
     for section in iniparser.sections:
         if not section.startswith("docker:"):
             continue
         reader = SectionReader(section, iniparser)
+        _, _, container_name = section.partition(":")
 
-        _, _, image = section.partition(":")
-        image_configs[image] = {}
+        container_configs[container_name]["image"] = reader.getstring("image")
+
+        if reader.getstring("environment"):
+            env = getenvdict(reader, "environment")
+            container_configs[container_name]["environment"] = env
+
         if reader.getstring("healthcheck_cmd"):
-            image_configs[image].update(
-                {
-                    "healthcheck_cmd": reader.getargv("healthcheck_cmd"),
-                    "healthcheck_interval": gettime(reader, "healthcheck_interval"),
-                    "healthcheck_timeout": gettime(reader, "healthcheck_timeout"),
-                    "healthcheck_retries": getint(reader, "healthcheck_retries"),
-                    "healthcheck_start_period": gettime(
-                        reader, "healthcheck_start_period"
-                    ),
-                }
+            container_configs[container_name]["healthcheck_cmd"] = reader.getargv(
+                "healthcheck_cmd"
             )
-        if reader.getstring("ports"):
-            image_configs[image]["ports"] = reader.getlist("ports")
-        if reader.getstring("links"):
-            image_configs[image]["links"] = [
-                link
-                for link in reader.getlist("links")
-                if link and _validate_link_line(link)
-            ]
+        if reader.getstring("healthcheck_interval"):
+            container_configs[container_name]["healthcheck_interval"] = gettime(
+                reader, "healthcheck_interval"
+            )
+        if reader.getstring("healthcheck_timeout"):
+            container_configs[container_name]["healthcheck_timeout"] = gettime(
+                reader, "healthcheck_timeout"
+            )
+        if reader.getstring("healthcheck_start_period"):
+            container_configs[container_name]["healthcheck_start_period"] = gettime(
+                reader, "healthcheck_start_period"
+            )
+        if reader.getstring("healthcheck_retries"):
+            container_configs[container_name]["healthcheck_retries"] = getint(
+                reader, "healthcheck_retries"
+            )
 
-    config._docker_image_configs = image_configs
+        if reader.getstring("ports"):
+            container_configs[container_name]["ports"] = reader.getlist("ports")
+
+        if reader.getstring("links"):
+            container_configs[container_name]["links"] = dict(
+                _validate_link_line(link_line, container_configs.keys())
+                for link_line in reader.getlist("links")
+                if link_line.strip()
+            )
+
+    config._docker_container_configs = container_configs
 
 
 def _validate_port(port_line):
@@ -132,50 +167,13 @@ def _validate_port(port_line):
     return (host_port, container_port_proto)
 
 
-def _validate_link_line(link_line):
-    name, sep, alias = link_line.rpartition(":")
-    if sep:
-        if not alias:
-            msg = (
-                "Did you mean to specify an alias? Link specified against '%s' "
-                "with dangling ':' - remove the comma or add an alias."
-            ) % name
-            raise ValueError(msg)
-    elif not name:
-        name = alias
-        alias = ""
-    return name, alias
-
-
-def _validate_link(envconfig, link_line):
-    name, alias = _validate_link_line(link_line)
-    container_id = None
-    seen = []
-    for container in envconfig._docker_containers:
-        image = container.attrs["Config"]["Image"]
-        seen.append(image)
-        pieces = image.split("/", 1)
-        if len(pieces) == 2:
-            registry_part, tagged_image_part = pieces
-            image_part = tagged_image_part.partition(":")[0]
-            image_name = f"{registry_part}/{image_part}"
-        elif len(pieces) == 1:
-            image_name = pieces[0].partition(":")[0]
-        else:
-            raise ValueError(
-                f"Unable to parse image \"{container.attrs['Config']['Image']}\""
-            )
-        if image_name == name:
-            container_id = container.id
-            break
-    if container_id is None:
-        msg = (
-            "Link name '{}' with alias '{}' not mapped to container id. These "
-            "container images have been seen: {}. You are responsible for proper "
-            "ordering of containers by dependencies"
-        ).format(name, alias, str(seen))
-        raise ValueError(msg)
-    return (container_id, alias or name)
+def _validate_link_line(link_line, container_names):
+    other_container_name, sep, alias = link_line.partition(":")
+    if sep and not alias:
+        raise ValueError(f"Link '{other_container_name}:' missing alias")
+    if other_container_name not in container_names:
+        raise ValueError(f"Container {other_container_name!r} not defined")
+    return other_container_name, alias or other_container_name
 
 
 @hookimpl  # noqa: C901
@@ -185,88 +183,91 @@ def tox_runtest_pre(venv):  # noqa: C901
         return
 
     config = envconfig.config
-    image_configs = config._docker_image_configs
+    container_configs = config._docker_container_configs
 
     docker = docker_module.from_env(version="auto")
     action = _newaction(venv, "docker")
 
-    environment = {}
-    for value in envconfig.dockerenv:
-        envvar, _, value = value.partition("=")
-        environment[envvar] = value
-        venv.envconfig.setenv[envvar] = value
-
     seen = set()
-    for image in envconfig.docker:
+    for container_name in envconfig.docker:
+        if container_name not in container_configs:
+            raise ValueError(f"Missing [docker:{container_name}] in tox.ini")
+        if container_name in seen:
+            raise ValueError(f"Container {container_name!r} specified more than once")
+        seen.add(container_name)
+
+        image = container_configs[container_name]["image"]
         name, _, tag = image.partition(":")
-        if name in seen:
-            raise ValueError(f"Docker image {name!r} is specified more than once")
-        seen.add(name)
 
         try:
             docker.images.get(image)
         except ImageNotFound:
-            action.setactivity("docker", f"pull {image!r}")
+            action.setactivity("docker", f"pull {image!r} (from {container_name!r})")
             with action:
                 docker.images.pull(name, tag=tag or None)
 
-    envconfig._docker_containers = []
-    for image in envconfig.docker:
-        image_config = image_configs.get(image, {})
-        hc_cmd = image_config.get("healthcheck_cmd")
-        hc_interval = image_config.get("healthcheck_interval")
-        hc_timeout = image_config.get("healthcheck_timeout")
-        hc_retries = image_config.get("healthcheck_retries")
-        hc_start_period = image_config.get("healthcheck_start_period")
+    envconfig._docker_containers = {}
+    for container_name in envconfig.docker:
+        container_config = container_configs[container_name]
+        hc_cmd = container_config.get("healthcheck_cmd")
+        hc_interval = container_config.get("healthcheck_interval")
+        hc_timeout = container_config.get("healthcheck_timeout")
+        hc_retries = container_config.get("healthcheck_retries")
+        hc_start_period = container_config.get("healthcheck_start_period")
 
-        if (
-            hc_cmd is not None
-            and hc_interval is not None
-            and hc_timeout is not None
-            and hc_retries is not None
-            and hc_start_period is not None
-        ):
-            healthcheck = {
-                "test": ["CMD-SHELL"] + hc_cmd,
-                "interval": hc_interval,
-                "timeout": hc_timeout,
-                "retries": hc_retries,
-                "start_period": hc_start_period,
-            }
-        else:
+        healthcheck = {}
+        if hc_cmd:
+            healthcheck["test"] = ["CMD-SHELL"] + hc_cmd
+        if hc_interval:
+            healthcheck["interval"] = hc_interval
+        if hc_timeout:
+            healthcheck["timeout"] = hc_timeout
+        if hc_start_period:
+            healthcheck["start_period"] = hc_start_period
+        if hc_retries:
+            healthcheck["retries"] = hc_retries
+
+        if healthcheck == {}:
             healthcheck = None
 
         ports = {}
-        for port_mapping in image_config.get("ports", []):
+        for port_mapping in container_config.get("ports", []):
             host_port, container_port_proto = _validate_port(port_mapping)
             existing_ports = set(ports.get(container_port_proto, []))
             existing_ports.add(host_port)
             ports[container_port_proto] = list(existing_ports)
 
         links = {}
-        for link_mapping in image_config.get("links", []):
-            container, alias = _validate_link(envconfig, link_mapping)
-            links[container] = alias
+        for other_container_name, alias in container_config.get("links", {}).items():
+            other_container = envconfig._docker_containers[other_container_name]
+            links[other_container.id] = alias
 
-        action.setactivity("docker", f"run {image!r}")
+        image = container_config["image"]
+        environment = container_config.get("environment", {})
+
+        action.setactivity("docker", f"run {image!r} (from {container_name!r})")
         with action:
             container = docker.containers.run(
                 image,
                 detach=True,
-                publish_all_ports=len(ports) == 0,
-                ports=ports,
                 environment=environment,
                 healthcheck=healthcheck,
+                labels={"tox_docker_container_name": container_name},
                 links=links,
+                name=container_name,
+                ports=ports,
+                publish_all_ports=len(ports) == 0,
             )
 
-        envconfig._docker_containers.append(container)
+        envconfig._docker_containers[container_name] = container
         container.reload()
 
-    for container in envconfig._docker_containers:
+    for container_name, container in envconfig._docker_containers.items():
         image = container.attrs["Config"]["Image"]
         if "Health" in container.attrs["State"]:
-            action.setactivity("docker", f"health check: {image!r}")
+            action.setactivity(
+                "docker", f"health check {image!r} (from {container_name!r})"
+            )
             with action:
                 while True:
                     container.reload()
@@ -278,11 +279,10 @@ def tox_runtest_pre(venv):  # noqa: C901
                     elif health == "unhealthy":
                         # the health check failed after its own timeout
                         stop_containers(venv)
-                        msg = f"{image!r} failed health check"
+                        msg = f"{image!r} (from {container_name!r}) failed health check"
                         venv.status = msg
                         raise HealthCheckFailed(msg)
 
-        name, _, tag = image.partition(":")
         gateway_ip = _get_gateway_ip(container)
         for containerport, hostports in container.attrs["NetworkSettings"][
             "Ports"
@@ -298,10 +298,10 @@ def tox_runtest_pre(venv):  # noqa: C901
             else:
                 continue
 
-            envvar = escape_env_var(f"{name}_HOST")
+            envvar = escape_env_var(f"{container_name}_HOST")
             venv.envconfig.setenv[envvar] = gateway_ip
 
-            envvar = escape_env_var(f"{name}_{containerport}_PORT")
+            envvar = escape_env_var(f"{container_name}_{containerport}_PORT")
             venv.envconfig.setenv[envvar] = hostport
 
             _, proto = containerport.split("/")
@@ -338,8 +338,10 @@ def stop_containers(venv):
 
     action = _newaction(venv, "docker")
 
-    for container in envconfig._docker_containers:
-        action.setactivity("docker", f"remove '{container.short_id}' (forced)")
+    for container_name, container in envconfig._docker_containers.items():
+        action.setactivity(
+            "docker", f"remove '{container.short_id}' (from {container_name!r})"
+        )
         with action:
             container.remove(v=True, force=True)
 
