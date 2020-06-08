@@ -12,124 +12,149 @@ more `Docker <https://www.docker.com/>`__ containers during the test run.
 Usage and Installation
 ----------------------
 
-tox loads all plugins automatically. It is recommended that you install the
-tox-docker plugin into the same Python environment as you install tox into,
-whether that's a virtualenv, etc.
+Tox loads all plugins automatically. To use tox-docker, ``pip install`` it
+into the same Python environment as you install tox into, whether that's a
+virtualenv, etc.
 
 You do not need to do anything special when running tox to invoke
-tox-docker. You do need to configure your project to request docker
-instances (see "Configuration" below).
+tox-docker, however you do need to configure your project to configure
+docker containers (see "Configuration" below).
 
 Configuration
 -------------
 
-In the ``testenv`` section, list the Docker images you want to include in
-the ``docker`` multi-line-list. Be sure to include the version tag.
+Each docker container you want to run must be configured via a
+``[docker:container-name]`` section. The ``container-name`` is a name you
+choose which must start with a letter and consist of only letters, numbers,
+dots, hyphens, and underscores. Each ``[docker:container-name]`` section must
+contain at least an ``image`` directive, which must name a `Docker image
+<https://docs.docker.com/glossary/#image>`__ as you'd pass to ``docker run``::
 
-You can include environment variables to be passed to the docker container
-via the ``dockerenv`` multi-line list. These will also be made available to
-your test suite as it runs, as ordinary environment variables::
+    [docker:db]
+    image = postgres:9-alpine
+
+Then, in your ``[testenv]``, use the ``docker`` directive to list containers
+you wish to run during those tests::
 
     [testenv]
     docker =
-        postgres:9-alpine
-    dockerenv =
-        POSTGRES_USER=username
-        POSTGRES_DB=dbname
+        db
+    commands = ...
 
-Host and Port Mapping
----------------------
+The ``[docker:container-name]`` section may contain the following directives:
 
-By default, tox-docker runs the container with the "publish all ports" option.
-You may also specify port publishing in ``tox.ini``, in a new section like::
+``image`` (required)
+    The `Docker image <https://docs.docker.com/glossary/#image>`__ to run.
+    This value is passed directly to Docker, and may be of any of the forms
+    that Docker accepts in eg ``docker run``.
 
-    [docker:redis:5.0-alpine]
-    ports = 5432:5432/tcp
+``environment``
+    A multi-line list of ``KEY=value`` settings which is used to set
+    environment variables for the container. The variables are only available
+    to the container, not to other containers or the test environment.
 
-The image name -- everything after the ``docker:`` in the section header --
-must *exactly* match the image name used in your testenv's ``docker`` setting.
-Published ports are separated by a newline and are in the format
-``<HOST>:<CONTAINER>/<PROTOCOL>``.
+``ports``
+    A multi-line list of port mapping specifications, as
+    ``HOST_PORT:CONTAINER_PORT/PROTO``, which causes the container's
+    ``EXPOSE`` d port to be available on ``HOST_PORT``. See below for
+    more on port mapping.
 
-Any port the container exposes will be made available to your test suite via
-environment variables of the form
-``<image-basename>_<exposed-port>_<protocol>_PORT``.  For instance, for the
-PostgreSQL container, there will be an environment variable
-``POSTGRES_5432_TCP_PORT`` whose value is the ephemeral port number that docker
-has bound the container's port 5432 to.
+    If ``ports`` is not specified, all the container's ``EXPOSE`` d ports are
+    mapped (equivalent to ``docker run -P ...``)
 
-Likewise, exposed UDP ports will have environment variables like
-``TELEGRAF_8092_UDP_PORT`` Since it's not possible to check whether UDP port
-is open it's just mapping to environment variable without any checks that
-service up and running.
+    For each mapped port, an environment variable of the form
+    ``<container-name>_<port-number>_<protocol>_PORT`` (eg
+    ``NGINX_80_TCP_PORT`` or ``TELEGRAF_8092_UDP_PORT``) is set for the test
+    run.
 
-The host name for each service is also exposed via environment as
-``<image-basename>_HOST``, which is ``POSTGRES_HOST`` and ``TELEGRAF_HOST`` for
-the two examples above.
+    For each container, an environment variable of the form
+    ``<container_name>_HOST`` is set for the test run, indicating the host
+    name or IP address to use to communicate with the container.
 
-Health Checking
----------------
+    In both environment variables, the container name part is converted to
+    upper case, and all non-alphanumeric characters are replaced with an
+    underscore (``_``).
 
-As of version 1.4, tox-docker uses Docker's health checking to determine
-when a container is fully running, before it begins your test. For Docker
-images that contain a ``HEALTHCHECK`` command, tox-docker uses that.
+    Tox-docker does not attempt to ensure that you have proper permission to
+    bind the ``HOST_PORT``, that it is not already bound and listening, etc;
+    if you explicitly list ports, it is your responsibility to ensure that
+    it can be successfully mapped.
 
-You may also specify a custom health check in ``tox.ini``, in a new section
-like::
+``links``
+    A multi-line list of `container links
+    <https://docs.docker.com/network/links/>`__, as ``other-container-name``
+    or ``other-container-name:alias``. If no alias is given, the
+    ``other-container-name`` is used. Within the container, the ``EXPOSE`` d
+    ports of the other container will be available via the alias as hostname.
 
-    [docker:redis:5.0-alpine]
-    healthcheck_cmd = redis-cli ping | grep -q PONG
-    healthcheck_interval = 1
+    When using links, you must specify containers in the correct start order
+    in the ``docker`` directive of your testenv -- tox-docker does not attempt
+    to resolve a valid start order.
+
+``healthcheck_cmd``, ``healthcheck_interval``, ``healthcheck_retries``, ``healthcheck_start_period``, ``healthcheck_timeout``
+    These set or customize parameters of the container `health check
+    <https://docs.docker.com/engine/reference/builder/#healthcheck>`__. The
+    ``healthcheck_interval``, ``healthcheck_start_period``, and
+    ``healthcheck_timeout`` are specified as a number of seconds.
+    The ``healtcheck_cmd`` is an argv list which must name a command and
+    arguments that can be run within the container; if not specified, any
+    health check built in to the container is used.
+
+    If any healthcheck parameters are defined, tox-docker will delay the
+    test run until the container reports healthy, and will fail the test
+    run if it never does so (within the parameters specified).
+
+Example
+-------
+
+.. code-block:: ini
+
+    [testenv:integration-tests]
+    deps = pytest
+    commands = py.test {toxinidir}/tests
+    docker =
+        db
+        appserv
+
+    [docker:db]
+    image = postgres:11-alpine
+    # Environment variables are passed to the container. They are only
+    # available to that container, and not to the testenv, other
+    # containers, or as replacements in other parts of tox.ini
+    environment =
+        POSTGRES_PASSWORD=hunter2
+        POSTGRES_USER=dbuser
+        POSTGRES_DB=tox_test_db
+    # The healthcheck ensures that tox-docker won't run tests until the
+    # container is up and the command finishes with exit code 0 (success)
+    healthcheck_cmd = PGPASSWORD=$POSTGRES_PASSWORD psql \
+        --user=$POSTGRES_USER --dbname=$POSTGRES_DB \
+        --host=127.0.0.1 --quiet --no-align --tuples-only \
+        -1 --command="SELECT 1"
     healthcheck_timeout = 1
     healthcheck_retries = 30
-    healthcheck_start_period = 0.5
+    healthcheck_interval = 1
+    healthcheck_start_period = 1
 
-The image name -- everything after the ``docker:`` in the section header --
-must *exactly* match the image name used in your testenv's ``docker`` setting.
+    [docker:appserv]
+    # You can use any value that `docker run` would accept as the image
+    image = your-registry.example.org:1234/your-appserv
+    # Within the appserv container, host "db" is linked to the postgres container
+    links =
+        db:db
+    # Use ports to expose specific ports; if you don't specify ports, then all
+    # the EXPOSEd ports defined by the image are mapped to an available
+    # ephemeral port.
+    ports =
+        8080:8080/tcp
 
-tox-docker will print a message for each container that it is waiting on a
-health check from, whether via the container's built-in ``HEALTHCHECK`` or a
-custom health check.
+
+Environment Variables
+---------------------
 
 If you are running in a Docker-In-Docker environment, you can override the address
 used for port checking using the environment variable ``TOX_DOCKER_GATEWAY``. This
 variable should be the hostname or ip address used to connect to the container.
-
-Container Linking
------------------
-
-Containers can be linked together using the `links` key.  The `links` configuration
-should use the form `{IMAGE_NAME}` or `{IMAGE_NAME}:{ALIAS}`.  Multiple links may be
-provided. If you do not provide an alias, the untagged image name will be used. The
-default aliases in the contrived example below would be 'memcached', 'postgres', and
-'elasticsearch'. No validation is performed on the alias. You are responsible for
-providing a valid identifier. If the image name produces an auto-generated alias that
-is invalid, you will need to provide a suitable alternative yourself using the form
-`{IMAGE_NAME}:{ALIAS}` as documented above.
-
-For example::
-
-    docker =
-        memcached:alpine
-        postgres:alpine
-        elasticsearch:7.7.0
-    dockerenv =
-        POSTGRES_PASSWORD=password
-        discovery.type=single-node
-        ES_JAVA_OPTS=-Xms512m -Xmx512m
-    [docker:postgres:alpine]
-    links = memcached
-    [docker:elasticsearch:7.7.0]
-    links =
-        memcached:cache
-        postgres
-
-Note: No dependency resolution is performed. You must define containers in proper
-dependency order.  An error will be raised if a link references a container that has
-not yet been processed.  Notice in the example above that `postgres` is listed after
-`memcached`.  And `elasticsearch` is listed after both `memcached` and `postgres`.
-It would be an error to list `postgres` before `memcached` and likewise for placing
-`elasticsearch` before either `postgres` or `memcached`.
 
 Python Version
 --------------
