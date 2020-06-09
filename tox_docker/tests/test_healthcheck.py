@@ -1,9 +1,14 @@
+from urllib.request import urlopen
+import os
+
 import pytest
 
-from tox_docker.tests.util import find_container
 
+@pytest.mark.parametrize("instance", ["HEALTHCHECK_BUILTIN", "HEALTHCHECK_CUSTOM"])
+def test_the_image_is_healthy(instance):
+    host = os.environ[f"{instance}_HOST"]
+    port = os.environ[f"{instance}_8000_TCP_PORT"]
+    url = f"http://{host}:{port}/healthy"
 
-@pytest.mark.parametrize("instance_name", ["healthcheck-builtin", "healthcheck-custom"])
-def test_the_image_is_healthy_builtin(instance_name):
-    container = find_container("healthcheck-builtin")
-    assert container.attrs["State"]["Health"]["Status"] == "healthy"
+    response = urlopen(url)
+    assert response.getcode() == 200, f"GET {url} => {response.getcode()}"
