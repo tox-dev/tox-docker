@@ -1,30 +1,17 @@
 from urllib.request import urlopen
 import os
 
-import docker
-
-from tox_docker.tests.util import find_container
-
 
 def test_exposed_ports_are_accessible_to_test_runs():
-    host = os.environ["NGINX_FROM_REGISTRY_URL_HOST"]
-    port = os.environ["NGINX_FROM_REGISTRY_URL_80_TCP_PORT"]
+    host = os.environ["HEALTHCHECK_BUILTIN_HOST"]
+    port = os.environ["HEALTHCHECK_BUILTIN_8000_TCP_PORT"]
 
     response = urlopen(f"http://{host}:{port}/")
     assert response.getcode() == 200
-    assert b"Thank you for using nginx." in response.read()
+    assert b"Directory listing for /" in response.read()
 
 
 def test_it_exposes_only_specified_port():
-    client = docker.from_env(version="auto")
-    mysql_container = None
-    for container in client.containers.list():
-        if "mysql" in container.attrs["Config"]["Image"]:
-            mysql_container = container
-            break
-
-    mysql_container = find_container("custom-port-mapping")
-    mapped_ports = mysql_container.attrs["NetworkSettings"]["Ports"]
-
-    assert mapped_ports["3306/tcp"] is not None
-    assert mapped_ports["33060/tcp"] is None
+    # this container remaps 1234/tcp to 2345, and hides 5678/udp
+    assert os.environ["NETWORKING_TWO_1234_TCP_PORT"] == "2345"
+    assert "NETWORKING_TWO_5678_UDP_PORT" not in os.environ
