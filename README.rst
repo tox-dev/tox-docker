@@ -91,6 +91,15 @@ The ``[docker:container-name]`` section may contain the following directives:
     in the ``docker`` directive of your testenv -- tox-docker does not attempt
     to resolve a valid start order.
 
+``volumes``
+    A multi-line list of `volumes
+    <https://docs.docker.com/storage/volumes/>`__ to make available to the
+    container, as ``<type>:<options>:<outside_path_or_name>:<inside_path>``.
+    The ``type`` must be ``bind``, and the only supported options are ``rw``
+    (read-write) or ``ro`` (read-only). The ``outside_path_or_name`` must
+    be a path that exists on the host system. Both the ``outside_path``
+    and ``inside_path`` must be absolute paths.
+
 ``healthcheck_cmd``, ``healthcheck_interval``, ``healthcheck_retries``, ``healthcheck_start_period``, ``healthcheck_timeout``
     These set or customize parameters of the container `health check
     <https://docs.docker.com/engine/reference/builder/#healthcheck>`__. The
@@ -135,6 +144,12 @@ Example
     healthcheck_retries = 30
     healthcheck_interval = 1
     healthcheck_start_period = 1
+    # Configure a bind-mounted volume on the host to store Postgres' data
+    # NOTE: this is included for demonstration purposes of tox-docker's
+    # volume capability; you probably _don't_ want to do this for real
+    # testing use cases, as this could persist data between test runs
+    volumes =
+        bind:rw:/my/own/datadir:/var/lib/postgresql/data
 
     [docker:appserv]
     # You can use any value that `docker run` would accept as the image
