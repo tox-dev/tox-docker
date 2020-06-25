@@ -104,6 +104,18 @@ The ``[docker:container-name]`` section may contain the following directives:
     test run until the container reports healthy, and will fail the test
     run if it never does so (within the parameters specified).
 
+Command-Line Arguments
+----------------------
+
+All Docker container configuration is specified in ``tox.ini``, but some
+aspects of tox-docker's behavior can be changed at run-time:
+
+``--docker-dont-stop=CONTAINER``
+    After the test run, don't stop & remove the named ``CONTAINER`` --
+    leaving the container running allows manual inspection of it, eg via
+    ``docker exec ...``. May be specified multiple times to leave several
+    containers running.
+
 Example
 -------
 
