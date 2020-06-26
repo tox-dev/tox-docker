@@ -4,11 +4,13 @@ import socket
 import sys
 import time
 
-from docker.errors import ImageNotFound
 from tox import hookimpl
 from tox.config import SectionReader
-import docker as docker_module
 import py
+
+from docker.errors import ImageNotFound
+from docker.types import Mount
+import docker as docker_module
 
 # nanoseconds in a second; named "SECOND" so that "1.5 * SECOND" makes sense
 SECOND = 1000000000
@@ -121,6 +123,12 @@ def tox_configure(config):  # noqa: C901
         if not section.startswith("docker:"):
             continue
         reader = SectionReader(section, iniparser)
+        reader.addsubstitutions(
+            distdir=config.distdir,
+            homedir=config.homedir,
+            toxinidir=config.toxinidir,
+            toxworkdir=config.toxworkdir,
+        )
         _, _, container_name = section.partition(":")
 
         container_configs[container_name].update(
@@ -165,6 +173,13 @@ def tox_configure(config):  # noqa: C901
                 if link_line.strip()
             )
 
+        if reader.getstring("volumes"):
+            container_configs[container_name]["mounts"] = [
+                _validate_volume_line(volume_line)
+                for volume_line in reader.getlist("volumes")
+                if volume_line.strip()
+            ]
+
     config._docker_container_configs = container_configs
 
 
@@ -188,6 +203,28 @@ def _validate_link_line(link_line, container_names):
     if other_container_name not in container_names:
         raise ValueError(f"Container {other_container_name!r} not defined")
     return other_container_name, alias or other_container_name
+
+
+def _validate_volume_line(volume_line):
+    parts = volume_line.split(":")
+    if len(parts) != 4:
+        raise ValueError(f"Volume {volume_line!r} is malformed")
+    if parts[0] != "bind":
+        raise ValueError(f"Volume {volume_line!r} type must be 'bind:'")
+    if parts[1] not in ("ro", "rw"):
+        raise ValueError(f"Volume {volume_line!r} options must be 'ro' or 'rw'")
+
+    volume_type, mode, outside, inside = parts
+    if not os.path.exists(outside):
+        raise ValueError(f"Volume source {outside!r} does not exist")
+    if not os.path.isabs(outside):
+        raise ValueError(f"Volume source {outside!r} must be an absolute path")
+    if not os.path.isabs(inside):
+        raise ValueError(f"Mount point {inside!r} must be an absolute path")
+
+    return Mount(
+        source=outside, target=inside, type=volume_type, read_only=bool(mode == "ro"),
+    )
 
 
 @hookimpl  # noqa: C901
@@ -271,6 +308,7 @@ def tox_runtest_pre(venv):  # noqa: C901
                 name=container_name,
                 ports=ports,
                 publish_all_ports=len(ports) == 0,
+                mounts=container_config.get("mounts", []),
             )
 
         envconfig._docker_containers[container_name] = container
