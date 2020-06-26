@@ -93,6 +93,7 @@ def tox_configure(config):  # noqa: C901
             environment[envvar] = value
         return environment
 
+    # discover container configs
     inipath = str(config.toxinipath)
     iniparser = py.iniconfig.IniConfig(inipath)
 
@@ -108,13 +109,26 @@ def tox_configure(config):  # noqa: C901
         # populated in the next loop
         container_configs[container_name] = {}
 
+    # validate command line options
+    for container_name in config.option.docker_dont_stop:
+        if container_name not in container_configs:
+            raise ValueError(
+                f"Container {container_name!r} not found (from --docker-dont-stop)"
+            )
+
+    # validate tox.ini
     for section in iniparser.sections:
         if not section.startswith("docker:"):
             continue
         reader = SectionReader(section, iniparser)
         _, _, container_name = section.partition(":")
 
-        container_configs[container_name]["image"] = reader.getstring("image")
+        container_configs[container_name].update(
+            {
+                "image": reader.getstring("image"),
+                "stop": container_name not in config.option.docker_dont_stop,
+            }
+        )
 
         if reader.getstring("environment"):
             env = getenvdict(reader, "environment")
@@ -315,27 +329,44 @@ def stop_containers(venv):
     if not envconfig.docker:
         return
 
+    config = envconfig.config
     action = _newaction(venv, "docker")
 
     for container_name, container in envconfig._docker_containers.items():
-        action.setactivity(
-            "docker", f"remove '{container.short_id}' (from {container_name!r})"
-        )
-        with action:
-            container.remove(v=True, force=True)
+        container_config = config._docker_container_configs[container_name]
+        if container_config["stop"]:
+            action.setactivity(
+                "docker", f"remove '{container.short_id}' (from {container_name!r})"
+            )
+            with action:
+                container.remove(v=True, force=True)
+        else:
+            action.setactivity(
+                "docker",
+                f"leave '{container.short_id}' (from {container_name!r}) running",
+            )
+            with action:
+                pass
 
 
 @hookimpl
 def tox_addoption(parser):
+    # necessary to allow the docker= directive in testenv sections
     parser.add_testenv_attribute(
         name="docker",
         type="line-list",
         help="Name of docker images, including tag, to start before the test run",
         default=[],
     )
-    parser.add_testenv_attribute(
-        name="dockerenv",
-        type="line-list",
-        help="List of ENVVAR=VALUE pairs that will be passed to all containers",
+
+    # command line flag to keep docker containers running
+    parser.add_argument(
+        "--docker-dont-stop",
         default=[],
+        action="append",
+        metavar="CONTAINER",
+        help=(
+            "If specified, tox-docker will not stop CONTAINER after the test run. "
+            "Can be specified multiple times."
+        ),
     )
