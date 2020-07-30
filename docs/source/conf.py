@@ -4,6 +4,7 @@
 # list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 
+from datetime import date
 import os
 
 import vcversioner
@@ -14,9 +15,11 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 # -- Project information -----------------------------------------------------
 
 project = "tox-docker"
-copyright = "2019, Dan Crosta"
+copyright = f"2017-{date.today().year}, Dan Crosta"
 author = "Dan Crosta"
 version = release = vcversioner.find_version(root=ROOT_DIR).version
+
+master_doc = "index"
 
 # -- General configuration ---------------------------------------------------
 
