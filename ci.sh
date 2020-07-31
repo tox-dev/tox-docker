@@ -5,6 +5,7 @@ set -x
 tox_version=$1
 docker_version=$2
 
+pip install --constraint $tox_version --constraint $docker_version -r dev-requirements.txt
 pip install --constraint $tox_version --constraint $docker_version .
 pip show tox tox-docker docker
 tox
