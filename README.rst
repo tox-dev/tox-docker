@@ -5,6 +5,9 @@
 A `tox <https://tox.readthedocs.io/en/latest/>`__ plugin which runs one or
 more `Docker <https://www.docker.com/>`__ containers during the test run.
 
+Links: `Source Code <https://github.com/tox-dev/tox-docker>`__ |
+`Documentation <https://tox-docker.readthedocs.io/en/latest/>`__
+
 .. image:: https://dev.azure.com/dcrosta/tox-docker/_apis/build/status/tox-dev.tox-docker?branchName=master
    :target: https://dev.azure.com/dcrosta/tox-docker/_build?definitionId=1&_a=summary
    :alt: Build Status
