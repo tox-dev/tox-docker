@@ -113,7 +113,7 @@ is invalid, you will need to provide a suitable alternative yourself using the f
 
 For example::
 
-    docker = 
+    docker =
         memcached:alpine
         postgres:alpine
         elasticsearch:7.7.0
@@ -134,3 +134,17 @@ not yet been processed.  Notice in the example above that `postgres` is listed a
 `memcached`.  And `elasticsearch` is listed after both `memcached` and `postgres`.
 It would be an error to list `postgres` before `memcached` and likewise for placing
 `elasticsearch` before either `postgres` or `memcached`.
+
+
+Custom run command
+------------------
+
+You can customize command to run in container::
+
+    [docker:mongo:4.2.8]
+    command = mongod --replSet rs0
+
+This command is optional because the person who created the image may have already
+provided a default ``command`` using the Dockerfile ``CMD`` instruction. As the operator
+(the person running a container from the image), you can override that CMD instruction
+just by specifying a new ``command``. For further details see the Docker documentation.

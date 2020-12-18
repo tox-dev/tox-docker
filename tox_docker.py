@@ -100,6 +100,8 @@ def tox_configure(config):
 
         _, _, image = section.partition(":")
         image_configs[image] = {}
+        if reader.getstring("command"):
+            image_configs[image]["command"] = reader.getstring("command")
         if reader.getstring("healthcheck_cmd"):
             image_configs[image].update({
                 "healthcheck_cmd": reader.getargv("healthcheck_cmd"),
@@ -206,6 +208,7 @@ def tox_runtest_pre(venv):
     envconfig._docker_containers = []
     for image in envconfig.docker:
         image_config = image_configs.get(image, {})
+        command = image_config.get('command')
         hc_cmd = image_config.get("healthcheck_cmd")
         hc_interval = image_config.get("healthcheck_interval")
         hc_timeout = image_config.get("healthcheck_timeout")
@@ -233,7 +236,7 @@ def tox_runtest_pre(venv):
             existing_ports = set(ports.get(container_port_proto, []))
             existing_ports.add(host_port)
             ports[container_port_proto] = list(existing_ports)
-        
+
         links = {}
         for link_mapping in image_config.get("links", []):
             container, alias = _validate_link(envconfig, link_mapping)
@@ -243,6 +246,7 @@ def tox_runtest_pre(venv):
         with action:
             container = docker.containers.run(
                 image,
+                command=command,
                 detach=True,
                 publish_all_ports=len(ports) == 0,
                 ports=ports,
