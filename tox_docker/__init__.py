@@ -4,13 +4,12 @@ import socket
 import sys
 import time
 
-from tox import hookimpl
-from tox.config import SectionReader
-import py
-
 from docker.errors import ImageNotFound
 from docker.types import Mount
+from tox import hookimpl
+from tox.config import SectionReader
 import docker as docker_module
+import py
 
 # nanoseconds in a second; named "SECOND" so that "1.5 * SECOND" makes sense
 SECOND = 1000000000
