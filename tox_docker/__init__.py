@@ -14,6 +14,7 @@ import docker as docker_module
 
 # nanoseconds in a second; named "SECOND" so that "1.5 * SECOND" makes sense
 SECOND = 1000000000
+IN_USE_VIRTUALENVS = {}
 
 
 class HealthCheckFailed(Exception):
@@ -232,6 +233,7 @@ def tox_runtest_pre(venv):  # noqa: C901
     envconfig = venv.envconfig
     if not envconfig.docker:
         return
+    IN_USE_VIRTUALENVS[venv.envconfig.envname] = venv
 
     config = envconfig.config
     container_configs = config._docker_container_configs
@@ -360,6 +362,14 @@ def tox_runtest_pre(venv):  # noqa: C901
 @hookimpl
 def tox_runtest_post(venv):
     stop_containers(venv)
+    if venv.envconfig.envname in IN_USE_VIRTUALENVS:
+        del IN_USE_VIRTUALENVS[venv.envconfig.envname]
+
+
+@hookimpl
+def tox_cleanup(session):  # noqa: F841
+    for venv in IN_USE_VIRTUALENVS.values():
+        stop_containers(venv)
 
 
 def stop_containers(venv):
