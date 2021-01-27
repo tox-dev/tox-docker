@@ -4,13 +4,12 @@ import socket
 import sys
 import time
 
-from tox import hookimpl
-from tox.config import SectionReader
-import py
-
 from docker.errors import ImageNotFound
 from docker.types import Mount
+from tox import hookimpl
+from tox.config import SectionReader
 import docker as docker_module
+import py
 
 # nanoseconds in a second; named "SECOND" so that "1.5 * SECOND" makes sense
 SECOND = 1000000000
@@ -223,7 +222,10 @@ def _validate_volume_line(volume_line):
         raise ValueError(f"Mount point {inside!r} must be an absolute path")
 
     return Mount(
-        source=outside, target=inside, type=volume_type, read_only=bool(mode == "ro"),
+        source=outside,
+        target=inside,
+        type=volume_type,
+        read_only=bool(mode == "ro"),
     )
 
 
