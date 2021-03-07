@@ -1,5 +1,5 @@
-from tox.action import Action
 from tox import hookspecs
+from tox.action import Action
 
 from tox_docker import tox_cleanup, tox_runtest_post
 
