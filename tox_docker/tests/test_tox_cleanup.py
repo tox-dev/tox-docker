@@ -1,4 +1,5 @@
 from tox.action import Action
+from tox import hookspecs
 
 from tox_docker import tox_cleanup, tox_runtest_post
 
@@ -56,7 +57,10 @@ def test_tox_emergency_cleanup():
     container = Container("test_container", virtual_env)
     assert container.running
     tox_cleanup(session)
-    assert not container.running
+    if hasattr(hookspecs, "tox_cleanup"):
+        assert not container.running
+    else:
+        assert container.running
 
 
 def test_tox_normal_cleanup():
