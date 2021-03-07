@@ -222,7 +222,10 @@ def _validate_volume_line(volume_line):
         raise ValueError(f"Mount point {inside!r} must be an absolute path")
 
     return Mount(
-        source=outside, target=inside, type=volume_type, read_only=bool(mode == "ro"),
+        source=outside,
+        target=inside,
+        type=volume_type,
+        read_only=bool(mode == "ro"),
     )
 
 
@@ -361,6 +364,12 @@ def tox_runtest_post(venv):
     stop_containers(venv)
 
 
+@hookimpl
+def tox_cleanup(session):  # noqa: F841
+    for venv in session.existing_venvs.values():
+        stop_containers(venv)
+
+
 def stop_containers(venv):
     envconfig = venv.envconfig
     if not envconfig.docker:
@@ -384,6 +393,7 @@ def stop_containers(venv):
             )
             with action:
                 pass
+    envconfig._docker_containers.clear()
 
 
 @hookimpl
