@@ -4,6 +4,8 @@ jobs:
     vmImage: 'ubuntu-16.04'
   strategy:
     matrix:
+      Python39:
+        python.version: '3.9'
       Python38:
         python.version: '3.8'
       Python37:
@@ -23,9 +25,3 @@ jobs:
 
   - script: ./ci.sh tox-3.x docker-3.x
     displayName: 'Tox 3.x, Docker 3.x'
-
-  - script: ./ci.sh tox-2.x docker-3.x
-    displayName: 'Tox 2.x, Docker 3.x'
-
-  - script: ./ci.sh tox-2.x docker-4.x
-    displayName: 'Tox 2.x, Docker 4.x'

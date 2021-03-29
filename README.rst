@@ -186,17 +186,22 @@ If you are running in a Docker-In-Docker environment, you can override the addre
 used for port checking using the environment variable ``TOX_DOCKER_GATEWAY``. This
 variable should be the hostname or ip address used to connect to the container.
 
-Python Version
---------------
+Version Compatibility
+---------------------
 
-Tox-docker requires tox to be run in Python 3.6 or newer. Older versions of
-tox-docker may work with older versions of Python, but these configurations
-are no longer supported.
+Tox-docker requires tox to be run in Python 3.6 or newer, and requires tox
+version 3.0 or newer. Older versions of tox-docker may work with older
+versions of Python or tox, but these configurations are no longer supported.
+
 
 ==========
 Change Log
 ==========
 
+* 3.0.0
+    * Support Tox 3 and newer only
+    * Automatically cleans up started docker containers, even if Tox
+      encounters an error during the test run (thanks @d9pouces)
 * 2.0.0
     * Support Python 3.6 and newer only
     * Move all container configuration to ``[docker:container-name]``
