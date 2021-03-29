@@ -216,6 +216,7 @@ def _validate_volume_line(volume_line):
     volume_type, mode, outside, inside = parts
     if not os.path.exists(outside):
         raise ValueError(f"Volume source {outside!r} does not exist")
+    outside = os.path.abspath(outside)
     if not os.path.isabs(outside):
         raise ValueError(f"Volume source {outside!r} must be an absolute path")
     if not os.path.isabs(inside):
