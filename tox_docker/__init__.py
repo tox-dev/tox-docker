@@ -146,9 +146,7 @@ def tox_configure(config):  # noqa: C901
                 "healthcheck_cmd"
             )
         if reader.getstring("command"):
-            container_configs[container_name]["command"] = reader.getstring(
-                "command"
-            )
+            container_configs[container_name]["command"] = reader.getstring("command")
         if reader.getstring("healthcheck_interval"):
             container_configs[container_name]["healthcheck_interval"] = gettime(
                 reader, "healthcheck_interval"
