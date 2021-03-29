@@ -145,6 +145,10 @@ def tox_configure(config):  # noqa: C901
             container_configs[container_name]["healthcheck_cmd"] = reader.getstring(
                 "healthcheck_cmd"
             )
+        if reader.getstring("command"):
+            container_configs[container_name]["command"] = reader.getstring(
+                "command"
+            )
         if reader.getstring("healthcheck_interval"):
             container_configs[container_name]["healthcheck_interval"] = gettime(
                 reader, "healthcheck_interval"
@@ -267,6 +271,7 @@ def tox_runtest_pre(venv):  # noqa: C901
         hc_timeout = container_config.get("healthcheck_timeout")
         hc_retries = container_config.get("healthcheck_retries")
         hc_start_period = container_config.get("healthcheck_start_period")
+        command = container_config.get("command")
 
         healthcheck = {}
         if hc_cmd:
@@ -302,6 +307,7 @@ def tox_runtest_pre(venv):  # noqa: C901
         with action:
             container = docker.containers.run(
                 image,
+                command=command,
                 detach=True,
                 environment=environment,
                 healthcheck=healthcheck,
