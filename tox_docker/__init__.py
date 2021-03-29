@@ -6,7 +6,7 @@ import time
 
 from docker.errors import ImageNotFound
 from docker.types import Mount
-from tox import hookimpl, hookspecs
+from tox import hookimpl
 from tox.config import SectionReader
 import docker as docker_module
 import py
@@ -364,13 +364,10 @@ def tox_runtest_post(venv):
     stop_containers(venv)
 
 
+@hookimpl
 def tox_cleanup(session):  # noqa: F841
     for venv in session.existing_venvs.values():
         stop_containers(venv)
-
-
-if hasattr(hookspecs, "tox_cleanup"):
-    tox_cleanup = hookimpl(tox_cleanup)
 
 
 def stop_containers(venv):
