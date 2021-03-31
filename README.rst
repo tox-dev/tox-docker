@@ -15,7 +15,7 @@ Links: `Source Code <https://github.com/tox-dev/tox-docker>`__ |
 Usage and Installation
 ----------------------
 
-Tox loads all plugins automatically. To use tox-docker, ``pip install`` it
+tox loads all plugins automatically. To use tox-docker, ``pip install`` it
 into the same Python environment as you install tox into, whether that's a
 virtualenv, etc.
 
