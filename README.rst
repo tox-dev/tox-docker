@@ -199,7 +199,7 @@ Change Log
 ==========
 
 * 3.0.0
-    * Support Tox 3 and newer only
+    * Support tox 3 and newer only
     * Automatically cleans up started docker containers, even if Tox
       encounters an error during the test run (thanks @d9pouces)
 * 2.0.0
