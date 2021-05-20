@@ -183,6 +183,7 @@ def tox_configure(config):  # noqa: C901
 
 
 def _validate_port(port_line):
+    reg = "([0-9]{1,5})\:([0-9]{1,5})\/?(tcp|udp|)"
     try:
         host_port, container_port, protocol = re.findall(reg, port_line)[0]
     except IndexError:
