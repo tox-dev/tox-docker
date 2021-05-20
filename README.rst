@@ -59,8 +59,9 @@ The ``[docker:container-name]`` section may contain the following directives:
 ``ports``
     A multi-line list of port mapping specifications, as
     ``HOST_PORT:CONTAINER_PORT/PROTO``, which causes the container's
-    ``EXPOSE`` d port to be available on ``HOST_PORT``. See below for
-    more on port mapping.
+    ``EXPOSE`` d port to be available on ``HOST_PORT``. In the case where
+    the protocol is not specified, tox-docker assumes tcp, as per the
+    dockre default. See below for more on port mapping.
 
     If ``ports`` is not specified, all the container's ``EXPOSE`` d ports are
     mapped (equivalent to ``docker run -P ...``)

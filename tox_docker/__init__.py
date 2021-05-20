@@ -183,16 +183,15 @@ def tox_configure(config):  # noqa: C901
 
 
 def _validate_port(port_line):
-    host_port, _, container_port_proto = port_line.partition(":")
-    host_port = int(host_port)
+    try:
+        host_port, container_port, protocol = re.findall(reg, port_line)[0]
+    except IndexError:
+        raise IndexError("invalid port specification")
 
-    container_port, _, protocol = container_port_proto.partition("/")
-    container_port = int(container_port)
+    if protocol == "":
+        protocol = "tcp"
 
-    if protocol.lower() not in ("tcp", "udp"):
-        raise ValueError("protocol is not tcp or udp")
-
-    return (host_port, container_port_proto)
+    return (host_port, "{}/{}".format(container_port, protocol))
 
 
 def _validate_link_line(link_line, container_names):
