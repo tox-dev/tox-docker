@@ -1,6 +1,6 @@
 import pytest
 
-from tox_docker import _validate_link_line
+from tox_docker.config import validate_link
 from tox_docker.tests.util import find_container
 
 
@@ -14,13 +14,13 @@ def test_linked_containers_can_communicate():
 
 def test_validate_link_line():
     names = {"httpd"}
-    assert _validate_link_line("httpd:apache", names) == ("httpd", "apache")
-    assert _validate_link_line("httpd", names) == ("httpd", "httpd")
+    assert validate_link("httpd:apache", names) == ("httpd", "apache")
+    assert validate_link("httpd", names) == ("httpd", "httpd")
 
 
 def test_validate_link_line_rejects_dangling_comma():
     names = {"httpd"}
     with pytest.raises(ValueError):
-        _validate_link_line("httpd:", names)
+        validate_link("httpd:", names)
     with pytest.raises(ValueError):
-        _validate_link_line("httpd", set())
+        validate_link("httpd", set())

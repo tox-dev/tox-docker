@@ -1,18 +1,16 @@
 import os
-import re
 import socket
 import sys
 import time
 
 from docker.errors import ImageNotFound
-from docker.types import Mount
 from tox import hookimpl
-from tox.config import SectionReader
 import docker as docker_module
-import py
 
-# nanoseconds in a second; named "SECOND" so that "1.5 * SECOND" makes sense
-SECOND = 1000000000
+from tox_docker.config_tox3 import (
+    discover_container_configs,
+    parse_container_config,
+)
 
 
 class HealthCheckFailed(Exception):
@@ -63,170 +61,24 @@ def _get_gateway_ip(container):
     return ip
 
 
-@hookimpl  # noqa: C901
-def tox_configure(config):  # noqa: C901
-    def getfloat(reader, key):
-        val = reader.getstring(key)
-        if val is None:
-            return None
-
-        try:
-            return float(val)
-        except ValueError:
-            msg = f"{val!r} is not a number (for {key} in [{reader.section_name}])"
-            raise ValueError(msg)
-
-    def gettime(reader, key):
-        return int(getfloat(reader, key) * SECOND)
-
-    def getint(reader, key):
-        raw = getfloat(reader, key)
-        val = int(raw)
-        if val != raw:
-            msg = f"{val!r} is not an int (for {key} in [{reader.section_name}])"
-            raise ValueError(msg)
-        return val
-
-    def getenvdict(reader, key):
-        environment = {}
-        for value in reader.getlist(key):
-            envvar, _, value = value.partition("=")
-            environment[envvar] = value
-        return environment
-
-    # discover container configs
-    inipath = str(config.toxinipath)
-    iniparser = py.iniconfig.IniConfig(inipath)
-
-    container_configs = {}
-    for section in iniparser.sections:
-        if not section.startswith("docker:"):
-            continue
-
-        _, _, container_name = section.partition(":")
-        if not re.match(r"^[a-zA-Z][-_.a-zA-Z0-9]+$", container_name):
-            raise ValueError(f"{container_name!r} is not a valid container name")
-
-        # populated in the next loop
-        container_configs[container_name] = {}
+@hookimpl
+def tox_configure(config):
+    container_config_names = discover_container_configs(config)
 
     # validate command line options
     for container_name in config.option.docker_dont_stop:
-        if container_name not in container_configs:
+        if container_name not in container_config_names:
             raise ValueError(
                 f"Container {container_name!r} not found (from --docker-dont-stop)"
             )
 
-    # validate tox.ini
-    for section in iniparser.sections:
-        if not section.startswith("docker:"):
-            continue
-        reader = SectionReader(section, iniparser)
-        reader.addsubstitutions(
-            distdir=config.distdir,
-            homedir=config.homedir,
-            toxinidir=config.toxinidir,
-            toxworkdir=config.toxworkdir,
+    container_configs = {}
+    for container_name in container_config_names:
+        container_configs[container_name] = parse_container_config(
+            config, container_name, container_config_names
         )
-        _, _, container_name = section.partition(":")
-
-        container_configs[container_name].update(
-            {
-                "image": reader.getstring("image"),
-                "stop": container_name not in config.option.docker_dont_stop,
-            }
-        )
-
-        if reader.getstring("environment"):
-            env = getenvdict(reader, "environment")
-            container_configs[container_name]["environment"] = env
-
-        if reader.getstring("healthcheck_cmd"):
-            container_configs[container_name]["healthcheck_cmd"] = reader.getstring(
-                "healthcheck_cmd"
-            )
-        if reader.getstring("healthcheck_interval"):
-            container_configs[container_name]["healthcheck_interval"] = gettime(
-                reader, "healthcheck_interval"
-            )
-        if reader.getstring("healthcheck_timeout"):
-            container_configs[container_name]["healthcheck_timeout"] = gettime(
-                reader, "healthcheck_timeout"
-            )
-        if reader.getstring("healthcheck_start_period"):
-            container_configs[container_name]["healthcheck_start_period"] = gettime(
-                reader, "healthcheck_start_period"
-            )
-        if reader.getstring("healthcheck_retries"):
-            container_configs[container_name]["healthcheck_retries"] = getint(
-                reader, "healthcheck_retries"
-            )
-
-        if reader.getstring("ports"):
-            container_configs[container_name]["ports"] = reader.getlist("ports")
-
-        if reader.getstring("links"):
-            container_configs[container_name]["links"] = dict(
-                _validate_link_line(link_line, container_configs.keys())
-                for link_line in reader.getlist("links")
-                if link_line.strip()
-            )
-
-        if reader.getstring("volumes"):
-            container_configs[container_name]["mounts"] = [
-                _validate_volume_line(volume_line)
-                for volume_line in reader.getlist("volumes")
-                if volume_line.strip()
-            ]
 
     config._docker_container_configs = container_configs
-
-
-def _validate_port(port_line):
-    host_port, _, container_port_proto = port_line.partition(":")
-    host_port = int(host_port)
-
-    container_port, _, protocol = container_port_proto.partition("/")
-    container_port = int(container_port)
-
-    if protocol.lower() not in ("tcp", "udp"):
-        raise ValueError("protocol is not tcp or udp")
-
-    return (host_port, container_port_proto)
-
-
-def _validate_link_line(link_line, container_names):
-    other_container_name, sep, alias = link_line.partition(":")
-    if sep and not alias:
-        raise ValueError(f"Link '{other_container_name}:' missing alias")
-    if other_container_name not in container_names:
-        raise ValueError(f"Container {other_container_name!r} not defined")
-    return other_container_name, alias or other_container_name
-
-
-def _validate_volume_line(volume_line):
-    parts = volume_line.split(":")
-    if len(parts) != 4:
-        raise ValueError(f"Volume {volume_line!r} is malformed")
-    if parts[0] != "bind":
-        raise ValueError(f"Volume {volume_line!r} type must be 'bind:'")
-    if parts[1] not in ("ro", "rw"):
-        raise ValueError(f"Volume {volume_line!r} options must be 'ro' or 'rw'")
-
-    volume_type, mode, outside, inside = parts
-    if not os.path.exists(outside):
-        raise ValueError(f"Volume source {outside!r} does not exist")
-    if not os.path.isabs(outside):
-        raise ValueError(f"Volume source {outside!r} must be an absolute path")
-    if not os.path.isabs(inside):
-        raise ValueError(f"Mount point {inside!r} must be an absolute path")
-
-    return Mount(
-        source=outside,
-        target=inside,
-        type=volume_type,
-        read_only=bool(mode == "ro"),
-    )
 
 
 @hookimpl  # noqa: C901
@@ -283,12 +135,7 @@ def tox_runtest_pre(venv):  # noqa: C901
         if healthcheck == {}:
             healthcheck = None
 
-        ports = {}
-        for port_mapping in container_config.get("ports", []):
-            host_port, container_port_proto = _validate_port(port_mapping)
-            existing_ports = set(ports.get(container_port_proto, []))
-            existing_ports.add(host_port)
-            ports[container_port_proto] = list(existing_ports)
+        ports = container_config.get("ports", [])
 
         links = {}
         for other_container_name, alias in container_config.get("links", {}).items():
