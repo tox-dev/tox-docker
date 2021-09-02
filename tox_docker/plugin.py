@@ -2,12 +2,14 @@ import os
 import socket
 import sys
 
+from docker.models.containers import Container
+
 
 class HealthCheckFailed(Exception):
     pass
 
 
-def get_gateway_ip(container):
+def get_gateway_ip(container: Container) -> str:
     gateway = os.getenv("TOX_DOCKER_GATEWAY")
     if gateway:
         ip = socket.gethostbyname(gateway)
@@ -21,7 +23,7 @@ def get_gateway_ip(container):
     return ip
 
 
-def escape_env_var(varname):
+def escape_env_var(varname: str) -> str:
     """
     Convert a string to a form suitable for use as an environment variable.
 
@@ -34,10 +36,10 @@ def escape_env_var(varname):
         "my.private.registry/cat/image" will become
         "MY_PRIVATE_REGISTRY_CAT_IMAGE"
     """
-    varname = list(varname.upper())
-    if not varname[0].isalpha():
-        varname[0] = "_"
-    for i, c in enumerate(varname):
+    varletters = list(varname.upper())
+    if not varletters[0].isalpha():
+        varletters[0] = "_"
+    for i, c in enumerate(varletters):
         if not c.isalnum() and c != "_":
-            varname[i] = "_"
-    return "".join(varname)
+            varletters[i] = "_"
+    return "".join(varletters)

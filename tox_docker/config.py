@@ -1,22 +1,20 @@
+from typing import Container, Tuple
 import os.path
 
 from docker.types import Mount
 
 
-def validate_port(port_line):
+def validate_port(port_line: str) -> Tuple[int, str]:
     host_port, _, container_port_proto = port_line.partition(":")
-    host_port = int(host_port)
-
-    container_port, _, protocol = container_port_proto.partition("/")
-    container_port = int(container_port)
+    _, _, protocol = container_port_proto.partition("/")
 
     if protocol.lower() not in ("tcp", "udp"):
         raise ValueError("protocol is not tcp or udp")
 
-    return (host_port, container_port_proto)
+    return (int(host_port), container_port_proto)
 
 
-def validate_link(link_line, container_names):
+def validate_link(link_line: str, container_names: Container[str]) -> Tuple[str, str]:
     other_container_name, sep, alias = link_line.partition(":")
     if sep and not alias:
         raise ValueError(f"Link '{other_container_name}:' missing alias")
@@ -25,7 +23,7 @@ def validate_link(link_line, container_names):
     return other_container_name, alias or other_container_name
 
 
-def validate_volume(volume_line):
+def validate_volume(volume_line: str) -> Mount:
     parts = volume_line.split(":")
     if len(parts) != 4:
         raise ValueError(f"Volume {volume_line!r} is malformed")

@@ -1,7 +1,12 @@
+from typing import Any, Dict, Optional
 import time
 
 from docker.errors import ImageNotFound
 from tox import hookimpl
+from tox.action import Action
+from tox.config import Config, Parser
+from tox.session import Session
+from tox.venv import VirtualEnv
 import docker as docker_module
 
 from tox_docker.config_tox3 import (
@@ -11,7 +16,7 @@ from tox_docker.config_tox3 import (
 from tox_docker.plugin import escape_env_var, get_gateway_ip, HealthCheckFailed
 
 
-def _newaction(venv, message):
+def _newaction(venv: VirtualEnv, message: str) -> Action:
     try:
         # tox 3.7 and later
         return venv.new_action(message)
@@ -20,7 +25,7 @@ def _newaction(venv, message):
 
 
 @hookimpl
-def tox_configure(config):
+def tox_configure(config: Config) -> None:
     container_config_names = discover_container_configs(config)
 
     # validate command line options
@@ -40,7 +45,7 @@ def tox_configure(config):
 
 
 @hookimpl  # noqa: C901
-def tox_runtest_pre(venv):  # noqa: C901
+def tox_runtest_pre(venv: VirtualEnv) -> None:  # noqa: C901
     envconfig = venv.envconfig
     if not envconfig.docker:
         return
@@ -90,9 +95,6 @@ def tox_runtest_pre(venv):  # noqa: C901
         if hc_retries:
             healthcheck["retries"] = hc_retries
 
-        if healthcheck == {}:
-            healthcheck = None
-
         ports = container_config.get("ports", [])
 
         links = {}
@@ -109,7 +111,7 @@ def tox_runtest_pre(venv):  # noqa: C901
                 image,
                 detach=True,
                 environment=environment,
-                healthcheck=healthcheck,
+                healthcheck=healthcheck or None,
                 labels={"tox_docker_container_name": container_name},
                 links=links,
                 name=container_name,
@@ -165,17 +167,17 @@ def tox_runtest_pre(venv):  # noqa: C901
 
 
 @hookimpl
-def tox_runtest_post(venv):
+def tox_runtest_post(venv: VirtualEnv) -> None:
     stop_containers(venv)
 
 
 @hookimpl
-def tox_cleanup(session):  # noqa: F841
+def tox_cleanup(session: Session) -> None:  # noqa: F841
     for venv in session.existing_venvs.values():
         stop_containers(venv)
 
 
-def stop_containers(venv):
+def stop_containers(venv: VirtualEnv) -> None:
     envconfig = venv.envconfig
     if not envconfig.docker:
         return
@@ -202,7 +204,7 @@ def stop_containers(venv):
 
 
 @hookimpl
-def tox_addoption(parser):
+def tox_addoption(parser: Parser) -> None:
     # necessary to allow the docker= directive in testenv sections
     parser.add_testenv_attribute(
         name="docker",

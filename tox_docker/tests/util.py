@@ -1,8 +1,9 @@
+from docker.models.containers import Container
 import docker
 import pytest
 
 
-def find_container(instance_name):
+def find_container(instance_name: str) -> Container:
     # TODO: refactor this as a pytest fixture
     client = docker.from_env(version="auto")
     for container in client.containers.list():

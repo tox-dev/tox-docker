@@ -1,6 +1,9 @@
+from collections import defaultdict
+from typing import cast, Container, Mapping, Optional, Sequence, TypedDict
 import re
 
-from tox.config import SectionReader
+from docker.types import Mount
+from tox.config import Config, SectionReader
 import py
 
 from tox_docker.config import validate_link, validate_port, validate_volume
@@ -9,7 +12,21 @@ from tox_docker.config import validate_link, validate_port, validate_volume
 SECOND = 1000000000
 
 
-def getfloat(reader, key):
+class ContainerConfig(TypedDict):
+    image: str
+    stop: bool
+    environment: Optional[Mapping[str, str]]
+    healthcheck_cmd: Optional[str]
+    healthcheck_interval: Optional[str]
+    healthcheck_timeout: Optional[str]
+    healthcheck_start_period: Optional[str]
+    healthcheck_retries: Optional[str]
+    ports: Optional[Mapping[str, int]]
+    links: Optional[Mapping[str, str]]
+    mounts: Optional[Sequence[Mount]]
+
+
+def getfloat(reader: SectionReader, key: str) -> Optional[float]:
     val = reader.getstring(key)
     if val is None:
         return None
@@ -21,12 +38,19 @@ def getfloat(reader, key):
         raise ValueError(msg)
 
 
-def gettime(reader, key):
-    return int(getfloat(reader, key) * SECOND)
-
-
-def getint(reader, key):
+def gettime(reader: SectionReader, key: str) -> Optional[int]:
     raw = getfloat(reader, key)
+    if raw is None:
+        return None
+
+    return int(raw * SECOND)
+
+
+def getint(reader: SectionReader, key: str) -> Optional[int]:
+    raw = getfloat(reader, key)
+    if raw is None:
+        return None
+
     val = int(raw)
     if val != raw:
         msg = f"{val!r} is not an int (for {key} in [{reader.section_name}])"
@@ -34,7 +58,7 @@ def getint(reader, key):
     return val
 
 
-def getenvdict(reader, key):
+def getenvdict(reader: SectionReader, key: str) -> Mapping[str, str]:
     environment = {}
     for value in reader.getlist(key):
         envvar, _, value = value.partition("=")
@@ -42,7 +66,7 @@ def getenvdict(reader, key):
     return environment
 
 
-def discover_container_configs(config):
+def discover_container_configs(config: Config) -> Sequence[str]:
     """
     Read the tox.ini, and return a list of docker container configs.
 
@@ -51,7 +75,7 @@ def discover_container_configs(config):
     inipath = str(config.toxinipath)
     iniparser = py.iniconfig.IniConfig(inipath)
 
-    container_configs = set()
+    container_names = set()
     for section in iniparser.sections:
         if not section.startswith("docker:"):
             continue
@@ -61,12 +85,14 @@ def discover_container_configs(config):
             raise ValueError(f"{container_name!r} is not a valid container name")
 
         # populated in the next loop
-        container_configs.add(container_name)
+        container_names.add(container_name)
 
-    return list(container_configs)
+    return list(container_names)
 
 
-def parse_container_config(config, container_name, all_container_names):
+def parse_container_config(
+    config: Config, container_name: str, all_container_names: Container[str]
+) -> ContainerConfig:
     inipath = str(config.toxinipath)
     iniparser = py.iniconfig.IniConfig(inipath)
 
@@ -103,10 +129,9 @@ def parse_container_config(config, container_name, all_container_names):
         container_config["healthcheck_retries"] = getint(reader, "healthcheck_retries")
 
     if reader.getstring("ports"):
-        ports = {}
+        ports = defaultdict(set)
         for port_mapping in reader.getlist("ports"):
             host_port, container_port_proto = validate_port(port_mapping)
-            ports.setdefault(container_port_proto, set())
             ports[container_port_proto].add(host_port)
 
         container_config["ports"] = {k: list(v) for k, v in ports.items()}
@@ -125,4 +150,4 @@ def parse_container_config(config, container_name, all_container_names):
             if volume_line.strip()
         ]
 
-    return container_config
+    return cast(ContainerConfig, container_config)
