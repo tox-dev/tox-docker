@@ -1,6 +1,6 @@
 import os
 
-from tox_docker import escape_env_var
+from tox_docker.plugin import escape_env_var
 
 
 def test_it_sets_automatic_env_vars():

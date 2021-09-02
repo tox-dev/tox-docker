@@ -9,6 +9,7 @@ setup(
     maintainer_email="dcrosta@late.am",
     install_requires=[
         "docker>=2.3.0,<6.0",
+        "packaging",
         "tox>=3.0.0,<4.0",
     ],
     packages=["tox_docker"],
