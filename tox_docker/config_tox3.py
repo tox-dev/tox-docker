@@ -9,7 +9,7 @@ import py
 from tox_docker.config import validate_link, validate_port, validate_volume
 
 try:
-    from typing import TypedDict
+    from typing import TypedDict  # type: ignore
 except ImportError:
     from typing_extensions import TypedDict
 
