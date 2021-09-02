@@ -1,7 +1,36 @@
-from typing import Container, Tuple
+from typing import Container, Mapping, Optional, Sequence, Tuple
 import os.path
 
 from docker.types import Mount
+
+
+class ContainerConfig:
+    def __init__(
+        self,
+        image: str,
+        stop: bool,
+        environment: Optional[Mapping[str, str]] = None,
+        healthcheck_cmd: Optional[str] = None,
+        healthcheck_interval: Optional[int] = None,
+        healthcheck_timeout: Optional[int] = None,
+        healthcheck_start_period: Optional[int] = None,
+        healthcheck_retries: Optional[int] = None,
+        ports: Optional[Mapping[str, int]] = None,
+        links: Optional[Mapping[str, str]] = None,
+        mounts: Optional[Sequence[Mount]] = None,
+    ) -> None:
+        self.image = image
+        self.stop = stop
+        self.environment: Mapping[str, str] = environment or {}
+        self.ports: Mapping[str, int] = ports or {}
+        self.links: Mapping[str, str] = links or {}
+        self.mounts: Sequence[Mount] = mounts or []
+
+        self.healthcheck_cmd = healthcheck_cmd
+        self.healthcheck_interval = healthcheck_interval
+        self.healthcheck_timeout = healthcheck_timeout
+        self.healthcheck_start_period = healthcheck_start_period
+        self.healthcheck_retries = healthcheck_retries
 
 
 def validate_port(port_line: str) -> Tuple[int, str]:

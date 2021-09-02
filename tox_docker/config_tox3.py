@@ -6,29 +6,15 @@ from docker.types import Mount
 from tox.config import Config, SectionReader
 import py
 
-from tox_docker.config import validate_link, validate_port, validate_volume
-
-try:
-    from typing import TypedDict  # type: ignore
-except ImportError:
-    from typing_extensions import TypedDict
+from tox_docker.config import (
+    ContainerConfig,
+    validate_link,
+    validate_port,
+    validate_volume,
+)
 
 # nanoseconds in a second; named "SECOND" so that "1.5 * SECOND" makes sense
 SECOND = 1000000000
-
-
-class ContainerConfig(TypedDict):
-    image: str
-    stop: bool
-    environment: Optional[Mapping[str, str]]
-    healthcheck_cmd: Optional[str]
-    healthcheck_interval: Optional[str]
-    healthcheck_timeout: Optional[str]
-    healthcheck_start_period: Optional[str]
-    healthcheck_retries: Optional[str]
-    ports: Optional[Mapping[str, int]]
-    links: Optional[Mapping[str, str]]
-    mounts: Optional[Sequence[Mount]]
 
 
 def getfloat(reader: SectionReader, key: str) -> Optional[float]:
@@ -109,29 +95,25 @@ def parse_container_config(
         toxworkdir=config.toxworkdir,
     )
 
-    container_config = {
+    kwargs = {
         "image": reader.getstring("image"),
         "stop": container_name not in config.option.docker_dont_stop,
     }
 
     if reader.getstring("environment"):
         env = getenvdict(reader, "environment")
-        container_config["environment"] = env
+        kwargs["environment"] = env
 
     if reader.getstring("healthcheck_cmd"):
-        container_config["healthcheck_cmd"] = reader.getstring("healthcheck_cmd")
+        kwargs["healthcheck_cmd"] = reader.getstring("healthcheck_cmd")
     if reader.getstring("healthcheck_interval"):
-        container_config["healthcheck_interval"] = gettime(
-            reader, "healthcheck_interval"
-        )
+        kwargs["healthcheck_interval"] = gettime(reader, "healthcheck_interval")
     if reader.getstring("healthcheck_timeout"):
-        container_config["healthcheck_timeout"] = gettime(reader, "healthcheck_timeout")
+        kwargs["healthcheck_timeout"] = gettime(reader, "healthcheck_timeout")
     if reader.getstring("healthcheck_start_period"):
-        container_config["healthcheck_start_period"] = gettime(
-            reader, "healthcheck_start_period"
-        )
+        kwargs["healthcheck_start_period"] = gettime(reader, "healthcheck_start_period")
     if reader.getstring("healthcheck_retries"):
-        container_config["healthcheck_retries"] = getint(reader, "healthcheck_retries")
+        kwargs["healthcheck_retries"] = getint(reader, "healthcheck_retries")
 
     if reader.getstring("ports"):
         ports = defaultdict(set)
@@ -139,20 +121,20 @@ def parse_container_config(
             host_port, container_port_proto = validate_port(port_mapping)
             ports[container_port_proto].add(host_port)
 
-        container_config["ports"] = {k: list(v) for k, v in ports.items()}
+        kwargs["ports"] = {k: list(v) for k, v in ports.items()}
 
     if reader.getstring("links"):
-        container_config["links"] = dict(
+        kwargs["links"] = dict(
             validate_link(link_line, all_container_names)
             for link_line in reader.getlist("links")
             if link_line.strip()
         )
 
     if reader.getstring("volumes"):
-        container_config["mounts"] = [
+        kwargs["mounts"] = [
             validate_volume(volume_line)
             for volume_line in reader.getlist("volumes")
             if volume_line.strip()
         ]
 
-    return cast(ContainerConfig, container_config)
+    return ContainerConfig(**kwargs)

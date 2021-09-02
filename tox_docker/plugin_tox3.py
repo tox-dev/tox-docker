@@ -1,8 +1,9 @@
-from typing import Any, Dict, Optional
+from typing import Any, cast, Dict, List, Mapping, Optional, Union
 import os.path
 import time
 
 from docker.errors import ImageNotFound
+from docker.models.containers import Container
 from tox import hookimpl
 from tox.action import Action
 from tox.config import Config, Parser
@@ -10,6 +11,7 @@ from tox.session import Session
 from tox.venv import VirtualEnv
 import docker as docker_module
 
+from tox_docker.config import ContainerConfig
 from tox_docker.config_tox3 import (
     discover_container_configs,
     parse_container_config,
@@ -36,7 +38,7 @@ def tox_configure(config: Config) -> None:
                 f"Container {container_name!r} not found (from --docker-dont-stop)"
             )
 
-    container_configs = {}
+    container_configs: Dict[str, ContainerConfig] = {}
     for container_name in container_config_names:
         container_configs[container_name] = parse_container_config(
             config, container_name, container_config_names
@@ -52,7 +54,7 @@ def tox_runtest_pre(venv: VirtualEnv) -> None:  # noqa: C901
         return
 
     config = envconfig.config
-    container_configs = config._docker_container_configs
+    container_configs: Mapping[str, ContainerConfig] = config._docker_container_configs
 
     docker = docker_module.from_env(version="auto")
     action = _newaction(venv, "docker")
@@ -65,7 +67,7 @@ def tox_runtest_pre(venv: VirtualEnv) -> None:  # noqa: C901
             raise ValueError(f"Container {container_name!r} specified more than once")
         seen.add(container_name)
 
-        image = container_configs[container_name]["image"]
+        image = container_configs[container_name].image
         name, _, tag = image.partition(":")
 
         try:
@@ -78,51 +80,44 @@ def tox_runtest_pre(venv: VirtualEnv) -> None:  # noqa: C901
     envconfig._docker_containers = {}
     for container_name in envconfig.docker:
         container_config = container_configs[container_name]
-        hc_cmd = container_config.get("healthcheck_cmd")
-        hc_interval = container_config.get("healthcheck_interval")
-        hc_timeout = container_config.get("healthcheck_timeout")
-        hc_retries = container_config.get("healthcheck_retries")
-        hc_start_period = container_config.get("healthcheck_start_period")
 
-        healthcheck = {}
-        if hc_cmd:
-            healthcheck["test"] = ["CMD-SHELL", hc_cmd]
-        if hc_interval:
-            healthcheck["interval"] = hc_interval
-        if hc_timeout:
-            healthcheck["timeout"] = hc_timeout
-        if hc_start_period:
-            healthcheck["start_period"] = hc_start_period
-        if hc_retries:
-            healthcheck["retries"] = hc_retries
-
-        ports = container_config.get("ports", [])
+        healthcheck: Dict[str, Union[List[str], int]] = {}
+        if container_config.healthcheck_cmd:
+            healthcheck["test"] = ["CMD-SHELL", container_config.healthcheck_cmd]
+        if container_config.healthcheck_interval:
+            healthcheck["interval"] = container_config.healthcheck_interval
+        if container_config.healthcheck_timeout:
+            healthcheck["timeout"] = container_config.healthcheck_timeout
+        if container_config.healthcheck_start_period:
+            healthcheck["start_period"] = container_config.healthcheck_start_period
+        if container_config.healthcheck_retries:
+            healthcheck["retries"] = container_config.healthcheck_retries
 
         links = {}
-        for other_container_name, alias in container_config.get("links", {}).items():
+        for other_container_name, alias in container_config.links.items():
             other_container = envconfig._docker_containers[other_container_name]
             links[other_container.id] = alias
 
-        image = container_config["image"]
-        environment = container_config.get("environment", {})
-        for mount in container_config.get("mounts", []):
+        for mount in container_config.mounts:
             source = mount["Source"]
             if not os.path.exists(source):
                 raise ValueError(f"Volume source {source!r} does not exist")
 
-        action.setactivity("docker", f"run {image!r} (from {container_name!r})")
+        action.setactivity(
+            "docker", f"run {container_config.image!r} (from {container_name!r})"
+        )
         with action:
             container = docker.containers.run(
-                image,
+                container_config.image,
                 detach=True,
-                environment=environment,
+                environment=container_config.environment,
                 healthcheck=healthcheck or None,
                 labels={"tox_docker_container_name": container_name},
                 links=links,
                 name=container_name,
-                ports=ports,
-                publish_all_ports=len(ports) == 0,
-                mounts=container_config.get("mounts", []),
+                ports=container_config.ports,
+                publish_all_ports=len(container_config.ports) == 0,
+                mounts=container_config.mounts,
             )
 
         envconfig._docker_containers[container_name] = container
@@ -190,9 +185,11 @@ def stop_containers(venv: VirtualEnv) -> None:
     config = envconfig.config
     action = _newaction(venv, "docker")
 
+    container_configs: Mapping[str, ContainerConfig] = config._docker_container_configs
+
     for container_name, container in envconfig._docker_containers.items():
-        container_config = config._docker_container_configs[container_name]
-        if container_config["stop"]:
+        container_config = container_configs[container_name]
+        if container_config.stop:
             action.setactivity(
                 "docker", f"remove '{container.short_id}' (from {container_name!r})"
             )

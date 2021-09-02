@@ -4,6 +4,7 @@ from tox import hookspecs
 from tox.action import Action
 
 from tox_docker import tox_cleanup, tox_runtest_post
+from tox_docker.config import ContainerConfig
 
 
 class Container:
@@ -12,7 +13,9 @@ class Container:
         self.short_id = short_id
         env_config = virtual_env.envconfig
         env_config._docker_containers[short_id] = self
-        env_config.config._docker_container_configs[short_id] = {"stop": True}
+        env_config.config._docker_container_configs[short_id] = ContainerConfig(
+            "image_name", stop=True
+        )
 
     # noinspection PyUnusedLocal
     def remove(self, v: bool = False, force: bool = False) -> None:
