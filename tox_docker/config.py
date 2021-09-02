@@ -33,8 +33,6 @@ def validate_volume(volume_line: str) -> Mount:
         raise ValueError(f"Volume {volume_line!r} options must be 'ro' or 'rw'")
 
     volume_type, mode, outside, inside = parts
-    if not os.path.exists(outside):
-        raise ValueError(f"Volume source {outside!r} does not exist")
     if not os.path.isabs(outside):
         raise ValueError(f"Volume source {outside!r} must be an absolute path")
     if not os.path.isabs(inside):

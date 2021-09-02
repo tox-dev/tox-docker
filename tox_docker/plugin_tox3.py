@@ -1,4 +1,5 @@
 from typing import Any, Dict, Optional
+import os.path
 import time
 
 from docker.errors import ImageNotFound
@@ -104,6 +105,10 @@ def tox_runtest_pre(venv: VirtualEnv) -> None:  # noqa: C901
 
         image = container_config["image"]
         environment = container_config.get("environment", {})
+        for mount in container_config.get("mounts", []):
+            source = mount["Source"]
+            if not os.path.exists(source):
+                raise ValueError(f"Volume source {source!r} does not exist")
 
         action.setactivity("docker", f"run {image!r} (from {container_name!r})")
         with action:
