@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import cast, Container, Mapping, Optional, Sequence, TypedDict
+from typing import cast, Container, Mapping, Optional, Sequence
 import re
 
 from docker.types import Mount
@@ -7,6 +7,11 @@ from tox.config import Config, SectionReader
 import py
 
 from tox_docker.config import validate_link, validate_port, validate_volume
+
+try:
+    from typing import TypedDict
+except ImportError:
+    from typing_extensions import TypedDict
 
 # nanoseconds in a second; named "SECOND" so that "1.5 * SECOND" makes sense
 SECOND = 1000000000
