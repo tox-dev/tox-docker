@@ -10,7 +10,7 @@ setup(
     install_requires=[
         "docker>=2.3.0,<6.0",
         "packaging",
-        "tox>=3.0.0,<4.0",
+        "tox>=3.0.0,<5.0",
     ],
     packages=["tox_docker"],
     entry_points={"tox": ["docker = tox_docker"]},
