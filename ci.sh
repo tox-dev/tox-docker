@@ -9,10 +9,6 @@ docker_version=$2
 # before trying to run tox...
 mkdir -p .tox
 
-if [ "$tox_version" -eq "tox-4.x" ]; then
-    pip install --pre "tox>=4.0.0a1"
-fi
-
 pip install --constraint $tox_version --constraint $docker_version -r dev-requirements.txt
 pip install --constraint $tox_version --constraint $docker_version .
 pip show tox tox-docker docker
