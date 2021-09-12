@@ -5,7 +5,7 @@ set -x
 tox_version=$1
 docker_version=$2
 
-if [ "$tox_version" -eq "tox-4.x" ]; then
+if [ "$tox_version" = "tox-4.x" ]; then
     tox=tox4
     mypy_target=mypy-tox4
 else
