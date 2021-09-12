@@ -1,13 +1,15 @@
 from collections import defaultdict
-from typing import cast, Container, Mapping, Optional, Sequence
+from typing import cast, Container, Dict, Mapping, Optional, Sequence
 import re
 
 from docker.types import Mount
 from tox.config import Config, SectionReader
+from tox.venv import VirtualEnv
 import py
 
 from tox_docker.config import (
     ContainerConfig,
+    RunningContainers,
     validate_link,
     validate_port,
     validate_volume,
@@ -15,6 +17,9 @@ from tox_docker.config import (
 
 # nanoseconds in a second; named "SECOND" so that "1.5 * SECOND" makes sense
 SECOND = 1000000000
+
+
+EnvRunningContainers = Dict[VirtualEnv, RunningContainers]
 
 
 def getfloat(reader: SectionReader, key: str) -> Optional[float]:
@@ -96,6 +101,7 @@ def parse_container_config(
     )
 
     kwargs = {
+        "name": container_name,
         "image": reader.getstring("image"),
         "stop": container_name not in config.option.docker_dont_stop,
     }

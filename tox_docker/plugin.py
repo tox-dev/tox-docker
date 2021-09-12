@@ -1,9 +1,15 @@
-from typing import List, Optional
+from typing import Dict, Iterable, List, Mapping, Optional, Tuple, Union
 import os
 import socket
 import sys
+import time
 
+from docker.errors import ImageNotFound
 from docker.models.containers import Container
+import docker as docker_module
+
+from tox_docker.config import ContainerConfig, RunningContainers
+from tox_docker.log import LogFunc
 
 
 class HealthCheckFailed(Exception):
@@ -44,3 +50,122 @@ def escape_env_var(varname: str) -> str:
         if not c.isalnum() and c != "_":
             varletters[i] = "_"
     return "".join(varletters)
+
+
+def docker_pull(container_config: ContainerConfig, log: LogFunc) -> None:
+    docker = docker_module.from_env(version="auto")
+
+    name, _, tag = container_config.image.partition(":")
+
+    try:
+        docker.images.get(container_config.image)
+    except ImageNotFound:
+        log(f"pull {container_config.image!r} (from {container_config.name!r})")
+        docker.images.pull(name, tag=tag or None)
+
+
+def docker_run(
+    container_config: ContainerConfig,
+    running_containers: RunningContainers,
+    log: LogFunc,
+) -> Container:
+    docker = docker_module.from_env(version="auto")
+
+    healthcheck: Dict[str, Union[List[str], int]] = {}
+    if container_config.healthcheck_cmd:
+        healthcheck["test"] = ["CMD-SHELL", container_config.healthcheck_cmd]
+    if container_config.healthcheck_interval:
+        healthcheck["interval"] = container_config.healthcheck_interval
+    if container_config.healthcheck_timeout:
+        healthcheck["timeout"] = container_config.healthcheck_timeout
+    if container_config.healthcheck_start_period:
+        healthcheck["start_period"] = container_config.healthcheck_start_period
+    if container_config.healthcheck_retries:
+        healthcheck["retries"] = container_config.healthcheck_retries
+
+    links = {}
+    for other_container_name, alias in container_config.links.items():
+        other_container = running_containers[other_container_name]
+        links[other_container.id] = alias
+
+    for mount in container_config.mounts:
+        source = mount["Source"]
+        if not os.path.exists(source):
+            raise ValueError(f"Volume source {source!r} does not exist")
+
+    log(f"run {container_config.image!r} (from {container_config.name!r})")
+    container = docker.containers.run(
+        container_config.image,
+        detach=True,
+        environment=container_config.environment,
+        healthcheck=healthcheck or None,
+        labels={"tox_docker_container_name": container_config.name},
+        links=links,
+        name=container_config.name,
+        ports=container_config.ports,
+        publish_all_ports=len(container_config.ports) == 0,
+        mounts=container_config.mounts,
+    )
+    container.reload()  # TODO: why do we need this?
+    return container
+
+
+def docker_health_check(
+    container_config: ContainerConfig, container: Container, log: LogFunc
+) -> None:
+    docker = docker_module.from_env(version="auto")
+
+    image = container.attrs["Config"]["Image"]
+    if "Health" in container.attrs["State"]:
+        log(f"health check {container_config.image!r} (from {container_config.name!r})")
+        while True:
+            container.reload()
+            health = container.attrs["State"]["Health"]["Status"]
+            if health == "healthy":
+                break
+            elif health == "starting":
+                time.sleep(0.1)
+            elif health == "unhealthy":
+                # the health check failed after its own timeout
+                msg = f"{container_config.image!r} (from {container_config.name!r}) failed health check"
+                raise HealthCheckFailed(msg)
+
+
+def docker_stop(
+    container_config: ContainerConfig, container: Container, log: LogFunc
+) -> None:
+    if container_config.stop:
+        log(f"remove '{container.short_id}' (from {container_config.name!r})")
+        container.remove(v=True, force=True)
+    else:
+        log(f"leave '{container.short_id}' (from {container_config.name!r}) running")
+
+
+def stop_containers(
+    containers: Iterable[Tuple[ContainerConfig, Container]], log: LogFunc
+) -> None:
+    for container_config, container in containers:
+        docker_stop(container_config, container, log)
+
+
+def get_env_vars(
+    container_config: ContainerConfig, container: Container
+) -> Mapping[str, str]:
+    env = {}
+    gateway_ip = get_gateway_ip(container)
+    for containerport, hostports in container.attrs["NetworkSettings"]["Ports"].items():
+        if hostports is None:
+            # The port is exposed by the container, but not published.
+            continue
+
+        for spec in hostports:
+            if spec["HostIp"] == "0.0.0.0":
+                hostport = spec["HostPort"]
+                break
+        else:
+            continue
+
+        env[escape_env_var(f"{container_config.name}_HOST")] = gateway_ip
+        env[escape_env_var(f"{container_config.name}_{containerport}_PORT")] = hostport
+
+    return env

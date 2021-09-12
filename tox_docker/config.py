@@ -1,12 +1,16 @@
-from typing import Container, Mapping, Optional, Sequence, Tuple
+from typing import Container, Dict, Mapping, Optional, Sequence, Tuple
 import os.path
 
+from docker.models.containers import Container as DockerContainer
 from docker.types import Mount
+
+RunningContainers = Dict[str, DockerContainer]
 
 
 class ContainerConfig:
     def __init__(
         self,
+        name: str,
         image: str,
         stop: bool,
         environment: Optional[Mapping[str, str]] = None,
@@ -19,6 +23,7 @@ class ContainerConfig:
         links: Optional[Mapping[str, str]] = None,
         mounts: Optional[Sequence[Mount]] = None,
     ) -> None:
+        self.name = name
         self.image = image
         self.stop = stop
         self.environment: Mapping[str, str] = environment or {}

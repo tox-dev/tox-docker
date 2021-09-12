@@ -5,9 +5,8 @@ tox_version = parse(tox.__version__)
 assert isinstance(tox_version, Version)
 
 if tox_version.major == 3:
-    from tox_docker.plugin_tox3 import *
+    from tox_docker.tox3.plugin import *
 elif tox_version.major == 4:
-    # from tox_docker.plugin_tox4 import *
-    pass
+    from tox_docker.tox4.plugin import *
 else:
     raise RuntimeError(f"tox_docker is incomptabile with tox {tox.__version__}")

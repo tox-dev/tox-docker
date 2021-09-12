@@ -1,9 +1,10 @@
 import os
+import sys
 
 import docker
 
 client = docker.from_env(version="auto")
-envdir = os.environ["TOX_ENV_DIR"]
+envdir = sys.argv[1]
 
 container_ids = [
     container.attrs["Id"].strip() for container in client.containers.list()
