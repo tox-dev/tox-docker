@@ -76,13 +76,11 @@ def tox_before_run_commands(tox_env: ToxEnv) -> None:
         container = docker_run(container_config, containers, log)
         containers[container_config.name] = container
 
-    all_healthy = True
     for container_name, container in containers.items():
         container_config = CONTAINER_CONFIGS[container_name]
         try:
             docker_health_check(container_config, container, log)
-        except HealthCheckFailed as e:
-            all_healthy = False
+        except HealthCheckFailed:
             # TODO: prevent tox from trying tests?
             break
 

@@ -115,7 +115,6 @@ def docker_health_check(
 ) -> None:
     docker = docker_module.from_env(version="auto")
 
-    image = container.attrs["Config"]["Image"]
     if "Health" in container.attrs["State"]:
         log(f"health check {container_config.image!r} (from {container_config.name!r})")
         while True:
