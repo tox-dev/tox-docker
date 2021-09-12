@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import find_packages, setup
 
 setup(
     name="tox-docker",
@@ -12,7 +12,7 @@ setup(
         "packaging",
         "tox>=3.0.0,<5.0",
     ],
-    packages=["tox_docker"],
+    packages=find_packages(),
     entry_points={"tox": ["docker = tox_docker"]},
     vcversioner={"version_module_paths": ["_version.py"]},
     classifiers=[
