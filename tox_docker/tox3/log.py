@@ -1,5 +1,3 @@
-from typing import Any
-
 from tox.venv import VirtualEnv
 
 from tox_docker.log import LogFunc

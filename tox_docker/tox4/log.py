@@ -1,4 +1,4 @@
-from logging import Handler, Logger
+from logging import Logger
 from typing import Optional
 
 from tox.report import LOGGER, ToxHandler

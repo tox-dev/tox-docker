@@ -1,23 +1,10 @@
 from collections import defaultdict
-from typing import (
-    Any,
-    Callable,
-    cast,
-    Container,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-)
-import re
+from typing import Callable, Container, Dict, List, Sequence
 
-from docker.types import Mount
 from tox.config.main import Config
 from tox.config.set_env import SetEnv
 from tox.config.sets import ConfigSet
 from tox.tox_env.api import ToxEnv
-import py
 
 from tox_docker.config import (
     ContainerConfig,
@@ -26,7 +13,6 @@ from tox_docker.config import (
     validate_port,
     validate_volume,
 )
-from tox_docker.tox4.log import log
 
 # nanoseconds in a second; named "SECOND" so that "1.5 * SECOND" makes sense
 SECOND = 1000000000

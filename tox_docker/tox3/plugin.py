@@ -1,25 +1,16 @@
-from typing import Any, cast, Dict, List, Mapping, Optional, Union
-import os.path
-import time
+from typing import Dict
 
-from docker.errors import ImageNotFound
-from docker.models.containers import Container
 from tox import hookimpl
 from tox.action import Action
 from tox.config import Config, Parser
-from tox.session import Session
 from tox.venv import VirtualEnv
-import docker as docker_module
 
-from tox_docker.config import ContainerConfig, RunningContainers
+from tox_docker.config import ContainerConfig
 from tox_docker.plugin import (
     docker_health_check,
     docker_pull,
     docker_run,
-    docker_stop,
-    escape_env_var,
     get_env_vars,
-    get_gateway_ip,
     HealthCheckFailed,
     stop_containers,
 )

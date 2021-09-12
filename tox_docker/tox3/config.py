@@ -1,8 +1,7 @@
 from collections import defaultdict
-from typing import cast, Container, Dict, Mapping, Optional, Sequence
+from typing import Container, Dict, Mapping, Optional, Sequence
 import re
 
-from docker.types import Mount
 from tox.config import Config, SectionReader
 from tox.venv import VirtualEnv
 import py

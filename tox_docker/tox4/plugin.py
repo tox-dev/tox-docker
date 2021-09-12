@@ -1,8 +1,5 @@
-from typing import Any, cast, Dict, List, Mapping, Optional, Union
-import os.path
-import time
+from typing import Dict, List
 
-from docker.models.containers import Container
 from tox.config.cli.parser import ToxParser
 from tox.config.main import Config
 from tox.config.types import EnvList
