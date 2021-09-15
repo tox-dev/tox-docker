@@ -1,6 +1,7 @@
 from collections import defaultdict
 from typing import Callable, Container, Dict, List, Sequence
 
+from tox.config.loader.section import Section
 from tox.config.main import Config
 from tox.config.set_env import SetEnv
 from tox.config.sets import ConfigSet
@@ -34,9 +35,7 @@ def required(setting_name: str) -> Callable[[str], str]:
 
 
 class EnvDockerConfigSet(ConfigSet):
-    def __init__(self, conf: Config) -> None:
-        super().__init__(conf)
-
+    def register_config(self) -> None:
         self.add_config(
             keys=["docker"],
             of_type=List[str],
@@ -44,15 +43,9 @@ class EnvDockerConfigSet(ConfigSet):
             desc="docker image configs to load",
         )
 
-    @property
-    def name(self) -> str:
-        return ""
-
 
 class DockerConfigSet(ConfigSet):
-    def __init__(self, conf: Config) -> None:
-        super().__init__(conf)
-
+    def register_config(self) -> None:
         self.add_config(
             keys=["image"],
             of_type=str,
@@ -63,7 +56,7 @@ class DockerConfigSet(ConfigSet):
         self.add_config(
             keys=["environment"],
             of_type=SetEnv,
-            default=SetEnv(""),
+            default=SetEnv("", "", ""),
             desc="environment variables to pass to the docker container",
         )
         self.add_config(
@@ -107,10 +100,6 @@ class DockerConfigSet(ConfigSet):
             post_process=lambda num: int(num * SECOND),
         )
 
-    @property
-    def name(self) -> str:
-        return ""
-
 
 def discover_container_configs(config: Config) -> Sequence[str]:
     """
@@ -121,7 +110,10 @@ def discover_container_configs(config: Config) -> Sequence[str]:
     docker_configs = set()
     for env_name in config:
         env_config = config.get_section_config(
-            f"testenv:{env_name}", EnvDockerConfigSet
+            section=Section("testenv", env_name),
+            base=[],
+            of_type=EnvDockerConfigSet,
+            for_env=None,
         )
         docker_configs.update(env_config.load("docker"))
 
@@ -131,7 +123,12 @@ def discover_container_configs(config: Config) -> Sequence[str]:
 def parse_container_config(
     config: Config, container_name: str, all_container_names: Container[str]
 ) -> ContainerConfig:
-    section = config.get_section_config(f"docker:{container_name}", DockerConfigSet)
+    section = config.get_section_config(
+        section=Section("docker", container_name),
+        base=[],
+        of_type=DockerConfigSet,
+        for_env=None,
+    )
 
     kwargs = {
         "name": container_name,

@@ -2,6 +2,7 @@ from typing import Dict, List
 
 from tox.config.cli.parser import ToxParser
 from tox.config.main import Config
+from tox.config.sets import ConfigSet
 from tox.config.types import EnvList
 from tox.execute.api import Outcome
 from tox.plugin import impl
@@ -28,7 +29,7 @@ ENV_CONTAINERS: EnvRunningContainers = {}
 
 
 @impl
-def tox_configure(config: Config) -> None:
+def tox_add_core_config(core_conf: ConfigSet, config: Config) -> None:
     container_config_names = discover_container_configs(config)
 
     # validate command line options
