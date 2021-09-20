@@ -11,6 +11,7 @@ from tox_docker.plugin import (
     docker_pull,
     docker_run,
     get_env_vars,
+    HealthCheckFailed,
     stop_containers,
 )
 from tox_docker.tox3.config import (
@@ -80,7 +81,13 @@ def tox_runtest_pre(venv: VirtualEnv) -> None:
 
     for container_name, container in containers.items():
         container_config = CONTAINER_CONFIGS[container_name]
-        docker_health_check(container_config, container, log)
+        try:
+            docker_health_check(container_config, container, log)
+        except HealthCheckFailed:
+            msg = f"{container_config.image!r} (from {container_name!r}) failed health check"
+            venv.status = msg
+            tox_runtest_post(venv)
+            raise
 
     for container_name, container in containers.items():
         container_config = CONTAINER_CONFIGS[container_name]

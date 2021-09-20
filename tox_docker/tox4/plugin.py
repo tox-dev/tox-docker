@@ -83,6 +83,7 @@ def tox_before_run_commands(tox_env: ToxEnv) -> None:
             docker_health_check(container_config, container, log)
         except HealthCheckFailed:
             tox_env.interrupt()
+            clean_up_containers(tox_env)
             raise
 
     for container_name, container in containers.items():
@@ -94,6 +95,10 @@ def tox_before_run_commands(tox_env: ToxEnv) -> None:
 def tox_after_run_commands(
     tox_env: ToxEnv, exit_code: int, outcomes: List[Outcome]
 ) -> None:
+    clean_up_containers(tox_env)
+
+
+def clean_up_containers(tox_env: ToxEnv) -> None:
     env_containers: RunningContainers = ENV_CONTAINERS.get(tox_env, {})
     containers_and_configs = [
         (CONTAINER_CONFIGS[name], container)
