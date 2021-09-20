@@ -5,7 +5,7 @@ from tox.action import Action
 from tox.config import Config, Parser
 from tox.venv import VirtualEnv
 
-from tox_docker.config import ContainerConfig
+from tox_docker.config import ContainerConfig, RunningContainers
 from tox_docker.plugin import (
     docker_health_check,
     docker_pull,
