@@ -87,16 +87,31 @@ class DockerConfigSet(ConfigSet):
             desc="docker healthcheck command",
         )
         self.add_config(
-            keys=[
-                "healthcheck_interval",
-                "healthcheck_timeout",
-                "healthcheck_start_period",
-                "healthcheck_retries",
-            ],
+            keys=["healthcheck_interval"],
             of_type=float,
             default=0,
-            desc="docker healthcheck parameters",
+            desc="docker healthcheck interval",
             post_process=lambda num: int(num * SECOND),
+        )
+        self.add_config(
+            keys=["healthcheck_timeout"],
+            of_type=float,
+            default=0,
+            desc="docker healthcheck timeout",
+            post_process=lambda num: int(num * SECOND),
+        )
+        self.add_config(
+            keys=["healthcheck_start_period"],
+            of_type=float,
+            default=0,
+            desc="docker healthcheck startup grace period",
+            post_process=lambda num: int(num * SECOND),
+        )
+        self.add_config(
+            keys=["healthcheck_retries"],
+            of_type=int,
+            default=0,
+            desc="docker healthcheck retry count",
         )
 
 
