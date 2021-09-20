@@ -89,12 +89,13 @@ def tox_runtest_pre(venv: VirtualEnv) -> None:
 
     for container_name, container in containers.items():
         container_config = CONTAINER_CONFIGS[container_name]
-        venv.envconfig.setenv.update(get_env_vars(container_config, container))
+        for key, val in get_env_vars(container_config, container).items():
+            venv.envconfig.setenv[key] = val
 
 
 @hookimpl
 def tox_runtest_post(venv: VirtualEnv) -> None:
-    env_containers: RunningContainers = ENV_CONTAINERS.get(tox_env, {})
+    env_containers: RunningContainers = ENV_CONTAINERS.get(venv, {})
     containers_and_configs = [
         (CONTAINER_CONFIGS[name], container)
         for name, container in env_containers.items()
