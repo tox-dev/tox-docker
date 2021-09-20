@@ -3,7 +3,6 @@ from typing import Callable, Container, Dict, List, Sequence
 
 from tox.config.loader.section import Section
 from tox.config.main import Config
-from tox.config.set_env import SetEnv
 from tox.config.sets import ConfigSet
 from tox.tox_env.api import ToxEnv
 
@@ -55,8 +54,8 @@ class DockerConfigSet(ConfigSet):
         )
         self.add_config(
             keys=["environment"],
-            of_type=SetEnv,
-            default=SetEnv("", "", ""),
+            of_type=Dict[str, str],
+            default={},
             desc="environment variables to pass to the docker container",
         )
         self.add_config(
@@ -137,9 +136,7 @@ def parse_container_config(
     }
 
     if section["environment"]:
-        kwargs["environment"] = {
-            k: section["environment"].load(k) for k in section["environment"]
-        }
+        kwargs["environment"] = section["environment"]
 
     if section["healthcheck_cmd"]:
         kwargs["healthcheck_cmd"] = section["healthcheck_cmd"]

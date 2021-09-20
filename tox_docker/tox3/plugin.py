@@ -89,17 +89,12 @@ def tox_runtest_pre(venv: VirtualEnv) -> None:
 
     for container_name, container in containers.items():
         container_config = CONTAINER_CONFIGS[container_name]
-
-        # TODO: for compatibility with tox4, we imitate "update_if_not_present";
-        # but ultimately we'd like to use update() for both versions
-        for var, val in get_env_vars(container_config, container).items():
-            if var not in venv.envconfig.setenv:
-                venv.envconfig.setenv[var] = val
+        venv.envconfig.setenv.update(get_env_vars(container_config, container))
 
 
 @hookimpl
 def tox_runtest_post(venv: VirtualEnv) -> None:
-    env_containers = ENV_CONTAINERS.get(venv, [])
+    env_containers: RunningContainers = ENV_CONTAINERS.get(tox_env, {})
     containers_and_configs = [
         (CONTAINER_CONFIGS[name], container)
         for name, container in env_containers.items()

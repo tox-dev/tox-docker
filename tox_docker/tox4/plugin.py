@@ -8,7 +8,7 @@ from tox.execute.api import Outcome
 from tox.plugin import impl
 from tox.tox_env.api import ToxEnv
 
-from tox_docker.config import ContainerConfig
+from tox_docker.config import ContainerConfig, RunningContainers
 from tox_docker.plugin import (
     docker_health_check,
     docker_pull,
@@ -71,7 +71,7 @@ def tox_before_run_commands(tox_env: ToxEnv) -> None:
         docker_pull(container_config, log)
 
     ENV_CONTAINERS.setdefault(tox_env, {})
-    containers = ENV_CONTAINERS[tox_env]
+    containers: RunningContainers = ENV_CONTAINERS[tox_env]
 
     for container_config in env_container_configs:
         container = docker_run(container_config, containers, log)
@@ -86,19 +86,15 @@ def tox_before_run_commands(tox_env: ToxEnv) -> None:
             break
 
     for container_name, container in containers.items():
-        # TODO: we'd really like .update(), but YMMV if you set_env
-        # one of the reserved var names manually in tox.ini
         container_config = CONTAINER_CONFIGS[container_name]
-        tox_env.conf["set_env"].update_if_not_present(
-            get_env_vars(container_config, container)
-        )
+        tox_env.conf["set_env"].update(get_env_vars(container_config, container))
 
 
 @impl
 def tox_after_run_commands(
     tox_env: ToxEnv, exit_code: int, outcomes: List[Outcome]
 ) -> None:
-    env_containers = ENV_CONTAINERS.get(tox_env, [])
+    env_containers: RunningContainers = ENV_CONTAINERS.get(tox_env, {})
     containers_and_configs = [
         (CONTAINER_CONFIGS[name], container)
         for name, container in env_containers.items()
