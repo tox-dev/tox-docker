@@ -4,7 +4,7 @@ __all__ = (
     "tox_add_option",
 )
 
-from typing import Dict, List
+from typing import List
 
 from tox.config.cli.parser import ToxParser
 from tox.config.loader.section import Section
@@ -12,7 +12,7 @@ from tox.execute.api import Outcome
 from tox.plugin import impl
 from tox.tox_env.api import ToxEnv
 
-from tox_docker.config import ContainerConfig, RunningContainers
+from tox_docker.config import RunningContainers
 from tox_docker.plugin import (
     docker_get,
     docker_health_check,
@@ -22,15 +22,8 @@ from tox_docker.plugin import (
     HealthCheckFailed,
     stop_containers,
 )
-from tox_docker.tox4.config import (
-    DockerConfigSet,
-    EnvRunningContainers,
-    parse_container_config,
-)
+from tox_docker.tox4.config import DockerConfigSet, parse_container_config
 from tox_docker.tox4.log import log
-
-CONTAINER_CONFIGS: Dict[str, ContainerConfig] = {}
-ENV_CONTAINERS: EnvRunningContainers = {}
 
 
 def get_docker_configs(tox_env: ToxEnv) -> List[DockerConfigSet]:

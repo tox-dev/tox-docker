@@ -1,23 +1,11 @@
-from typing import Dict, List, Sequence
+from typing import Dict, List
 
-from tox.config.loader.section import Section
-from tox.config.main import Config
 from tox.config.sets import ConfigSet
-from tox.tox_env.api import ToxEnv
 
-from tox_docker.config import (
-    ContainerConfig,
-    Image,
-    Link,
-    Port,
-    RunningContainers,
-    Volume,
-)
+from tox_docker.config import ContainerConfig, Image, Link, Port, Volume
 
 # nanoseconds in a second; named "SECOND" so that "1.5 * SECOND" makes sense
 SECOND = 1000000000
-
-EnvRunningContainers = Dict[ToxEnv, RunningContainers]
 
 
 class MissingRequiredSetting(Exception):
@@ -98,45 +86,6 @@ class DockerConfigSet(ConfigSet):
             default=0,
             desc="docker healthcheck retry count",
         )
-
-
-class EnvDockerConfigSet(ConfigSet):
-    def register_config(self) -> None:
-        def build_docker_config_set(container_name: object) -> DockerConfigSet:
-            assert isinstance(container_name, str)
-            return self._conf.get_section_config(
-                section=Section("docker", container_name),
-                base=[],
-                of_type=DockerConfigSet,
-                for_env=None,
-            )
-
-        self.add_config(
-            keys=["docker"],
-            of_type=List[DockerConfigSet],
-            default=[],
-            desc="docker image configs to load",
-            factory=build_docker_config_set,  # type: ignore
-        )
-
-
-def discover_container_configs(config: Config) -> Sequence[DockerConfigSet]:
-    """
-    Read the tox.ini, and return a list of docker container configs.
-
-    """
-
-    docker_configs = set()
-    for env_name in config:
-        env_config = config.get_section_config(
-            section=Section("testenv", env_name),
-            base=[],
-            of_type=EnvDockerConfigSet,
-            for_env=None,
-        )
-        docker_configs.update(env_config.load("docker"))
-
-    return list(docker_configs)
 
 
 def parse_container_config(docker_config: DockerConfigSet) -> ContainerConfig:
