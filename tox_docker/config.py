@@ -80,9 +80,9 @@ class ContainerConfig:
         stop: bool,
         environment: Optional[Mapping[str, str]] = None,
         healthcheck_cmd: Optional[str] = None,
-        healthcheck_interval: Optional[int] = None,
-        healthcheck_timeout: Optional[int] = None,
-        healthcheck_start_period: Optional[int] = None,
+        healthcheck_interval: Optional[float] = None,
+        healthcheck_timeout: Optional[float] = None,
+        healthcheck_start_period: Optional[float] = None,
         healthcheck_retries: Optional[int] = None,
         ports: Optional[Collection[Port]] = None,
         links: Optional[Collection[Link]] = None,
@@ -97,7 +97,13 @@ class ContainerConfig:
         self.mounts: Collection[Mount] = [v.docker_mount for v in volumes or ()]
 
         self.healthcheck_cmd = healthcheck_cmd
-        self.healthcheck_interval = healthcheck_interval
-        self.healthcheck_timeout = healthcheck_timeout
-        self.healthcheck_start_period = healthcheck_start_period
+        self.healthcheck_interval = (
+            int(healthcheck_interval) if healthcheck_interval else None
+        )
+        self.healthcheck_timeout = (
+            int(healthcheck_timeout) if healthcheck_timeout else None
+        )
+        self.healthcheck_start_period = (
+            int(healthcheck_start_period) if healthcheck_start_period else None
+        )
         self.healthcheck_retries = healthcheck_retries
