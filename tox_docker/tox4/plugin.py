@@ -1,15 +1,20 @@
+__all__ = (
+    "tox_before_run_commands",
+    "tox_after_run_commands",
+    "tox_add_option",
+)
+
 from typing import Dict, List
 
 from tox.config.cli.parser import ToxParser
-from tox.config.main import Config
-from tox.config.sets import ConfigSet
-from tox.config.types import EnvList
+from tox.config.loader.section import Section
 from tox.execute.api import Outcome
 from tox.plugin import impl
 from tox.tox_env.api import ToxEnv
 
 from tox_docker.config import ContainerConfig, RunningContainers
 from tox_docker.plugin import (
+    docker_get,
     docker_health_check,
     docker_pull,
     docker_run,
@@ -18,7 +23,7 @@ from tox_docker.plugin import (
     stop_containers,
 )
 from tox_docker.tox4.config import (
-    discover_container_configs,
+    DockerConfigSet,
     EnvRunningContainers,
     parse_container_config,
 )
@@ -28,57 +33,57 @@ CONTAINER_CONFIGS: Dict[str, ContainerConfig] = {}
 ENV_CONTAINERS: EnvRunningContainers = {}
 
 
-@impl
-def tox_add_core_config(core_conf: ConfigSet, config: Config) -> None:
-    container_config_names = discover_container_configs(config)
-
-    # validate command line options
-    for container_name in config.options.docker_dont_stop:
-        if container_name not in container_config_names:
-            raise ValueError(
-                f"Container {container_name!r} not found (from --docker-dont-stop)"
-            )
-
-    for container_name in container_config_names:
-        CONTAINER_CONFIGS[container_name] = parse_container_config(
-            config, container_name, container_config_names
+def get_docker_configs(tox_env: ToxEnv) -> List[DockerConfigSet]:
+    def build_docker_config_set(container_name: object) -> DockerConfigSet:
+        assert isinstance(container_name, str)
+        docker_conf = tox_env.core._conf.get_section_config(
+            section=Section("docker", container_name),
+            base=[],
+            of_type=DockerConfigSet,
+            for_env=None,
         )
+        if not docker_conf.loaders:
+            raise ValueError(f"Missing [docker:{container_name}] in tox.ini")
+        return docker_conf
+
+    tox_env.conf.add_config(
+        keys=["docker"],
+        of_type=List[DockerConfigSet],
+        default=[],
+        desc="docker image configs to load",
+        factory=build_docker_config_set,  # type: ignore
+    )
+
+    return tox_env.conf.load("docker")
 
 
 @impl
 def tox_before_run_commands(tox_env: ToxEnv) -> None:
-    tox_env.conf.add_config(
-        keys=["docker"],
-        of_type=EnvList,
-        default=EnvList([]),
-        desc="docker image configs to load",
-        post_process=list,  # type: ignore
-    )
+    docker_confs = get_docker_configs(tox_env)
 
-    container_names = tox_env.conf["docker"]
-    env_container_configs = []
+    container_configs = [
+        parse_container_config(docker_conf) for docker_conf in docker_confs
+    ]
 
     seen = set()
-    for container_name in container_names:
-        if container_name not in CONTAINER_CONFIGS:
-            raise ValueError(f"Missing [docker:{container_name}] in tox.ini")
-        if container_name in seen:
-            raise ValueError(f"Container {container_name!r} specified more than once")
-        seen.add(container_name)
-        env_container_configs.append(CONTAINER_CONFIGS[container_name])
+    for container_config in container_configs:
+        if container_config.name in seen:
+            raise ValueError(
+                f"Container {container_config.name!r} specified more than once"
+            )
+        seen.add(container_config.name)
 
-    for container_config in env_container_configs:
+    for container_config in container_configs:
         docker_pull(container_config, log)
 
-    ENV_CONTAINERS.setdefault(tox_env, {})
-    containers: RunningContainers = ENV_CONTAINERS[tox_env]
+    config_and_container = []
+    running_containers: RunningContainers = {}
+    for container_config in container_configs:
+        container = docker_run(container_config, running_containers, log)
+        config_and_container.append((container_config, container))
+        running_containers[container_config.name] = container
 
-    for container_config in env_container_configs:
-        container = docker_run(container_config, containers, log)
-        containers[container_config.name] = container
-
-    for container_name, container in containers.items():
-        container_config = CONTAINER_CONFIGS[container_name]
+    for container_config, container in config_and_container:
         try:
             docker_health_check(container_config, container, log)
         except HealthCheckFailed:
@@ -86,8 +91,6 @@ def tox_before_run_commands(tox_env: ToxEnv) -> None:
             clean_up_containers(tox_env)
             raise
 
-    for container_name, container in containers.items():
-        container_config = CONTAINER_CONFIGS[container_name]
         tox_env.conf["set_env"].update(get_env_vars(container_config, container))
 
 
@@ -99,12 +102,18 @@ def tox_after_run_commands(
 
 
 def clean_up_containers(tox_env: ToxEnv) -> None:
-    env_containers: RunningContainers = ENV_CONTAINERS.get(tox_env, {})
-    containers_and_configs = [
-        (CONTAINER_CONFIGS[name], container)
-        for name, container in env_containers.items()
+    docker_confs = get_docker_configs(tox_env)
+    container_configs = [
+        parse_container_config(docker_conf) for docker_conf in docker_confs
     ]
-    stop_containers(containers_and_configs, log)
+
+    configs_and_containers = []
+    for config in container_configs:
+        container = docker_get(config)
+        if container:
+            configs_and_containers.append((config, container))
+
+    stop_containers(configs_and_containers, log)
 
 
 @impl

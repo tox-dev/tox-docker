@@ -1,3 +1,10 @@
+__all__ = (
+    "tox_configure",
+    "tox_runtest_pre",
+    "tox_runtest_post",
+    "tox_addoption",
+)
+
 from typing import Dict
 
 from tox import hookimpl

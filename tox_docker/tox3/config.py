@@ -1,4 +1,3 @@
-from collections import defaultdict
 from typing import Container, Dict, Mapping, Optional, Sequence
 import re
 
@@ -8,10 +7,11 @@ import py
 
 from tox_docker.config import (
     ContainerConfig,
+    Image,
+    Link,
+    Port,
     RunningContainers,
-    validate_link,
-    validate_port,
-    validate_volume,
+    Volume,
 )
 
 # nanoseconds in a second; named "SECOND" so that "1.5 * SECOND" makes sense
@@ -101,7 +101,7 @@ def parse_container_config(
 
     kwargs = {
         "name": container_name,
-        "image": reader.getstring("image"),
+        "image": Image(reader.getstring("image")),
         "stop": container_name not in config.option.docker_dont_stop,
     }
 
@@ -121,25 +121,12 @@ def parse_container_config(
         kwargs["healthcheck_retries"] = getint(reader, "healthcheck_retries")
 
     if reader.getstring("ports"):
-        ports = defaultdict(set)
-        for port_mapping in reader.getlist("ports"):
-            host_port, container_port_proto = validate_port(port_mapping)
-            ports[container_port_proto].add(host_port)
-
-        kwargs["ports"] = {k: list(v) for k, v in ports.items()}
+        kwargs["ports"] = [Port(line) for line in reader.getlist("ports")]
 
     if reader.getstring("links"):
-        kwargs["links"] = dict(
-            validate_link(link_line, all_container_names)
-            for link_line in reader.getlist("links")
-            if link_line.strip()
-        )
+        kwargs["links"] = [Link(line) for line in reader.getlist("links")]
 
     if reader.getstring("volumes"):
-        kwargs["mounts"] = [
-            validate_volume(volume_line)
-            for volume_line in reader.getlist("volumes")
-            if volume_line.strip()
-        ]
+        kwargs["volumes"] = [Volume(line) for line in reader.getlist("volumes")]
 
     return ContainerConfig(**kwargs)

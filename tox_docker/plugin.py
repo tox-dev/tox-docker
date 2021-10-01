@@ -1,10 +1,10 @@
-from typing import Dict, Iterable, List, Mapping, Tuple, Union
+from typing import Dict, Iterable, List, Mapping, Optional, Tuple, Union
 import os
 import socket
 import sys
 import time
 
-from docker.errors import ImageNotFound
+from docker.errors import ImageNotFound, NotFound
 from docker.models.containers import Container
 import docker as docker_module
 
@@ -55,13 +55,11 @@ def escape_env_var(varname: str) -> str:
 def docker_pull(container_config: ContainerConfig, log: LogFunc) -> None:
     docker = docker_module.from_env(version="auto")
 
-    name, _, tag = container_config.image.partition(":")
-
     try:
-        docker.images.get(container_config.image)
+        docker.images.get(container_config.image.name)
     except ImageNotFound:
         log(f"pull {container_config.image!r} (from {container_config.name!r})")
-        docker.images.pull(name, tag=tag or None)
+        docker.images.pull(container_config.image.name, tag=container_config.image.tag)
 
 
 def docker_run(
@@ -83,10 +81,16 @@ def docker_run(
     if container_config.healthcheck_retries:
         healthcheck["retries"] = container_config.healthcheck_retries
 
+    ports = {p.container_port_proto: p.host_port for p in container_config.ports}
+
     links = {}
-    for other_container_name, alias in container_config.links.items():
-        other_container = running_containers[other_container_name]
-        links[other_container.id] = alias
+    for link in container_config.links:
+        if link.target not in running_containers:
+            raise ValueError(
+                f"Container {link.target!r} not running; it must come before {container_config.name!r} in the docker= list"
+            )
+        other_container = running_containers[link.target]
+        links[other_container.id] = link.alias
 
     for mount in container_config.mounts:
         source = mount["Source"]
@@ -95,15 +99,15 @@ def docker_run(
 
     log(f"run {container_config.image!r} (from {container_config.name!r})")
     container = docker.containers.run(
-        container_config.image,
+        str(container_config.image),
         detach=True,
         environment=container_config.environment,
         healthcheck=healthcheck or None,
         labels={"tox_docker_container_name": container_config.name},
         links=links,
         name=container_config.name,
-        ports=container_config.ports,
-        publish_all_ports=len(container_config.ports) == 0,
+        ports=ports,
+        publish_all_ports=len(ports) == 0,
         mounts=container_config.mounts,
     )
     container.reload()  # TODO: why do we need this?
@@ -138,6 +142,14 @@ def docker_stop(
         container.remove(v=True, force=True)
     else:
         log(f"leave '{container.short_id}' (from {container_config.name!r}) running")
+
+
+def docker_get(container_config: ContainerConfig) -> Optional[Container]:
+    docker = docker_module.from_env(version="auto")
+    try:
+        return docker.containers.get(container_config.name)
+    except NotFound:
+        return None
 
 
 def stop_containers(
