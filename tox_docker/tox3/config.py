@@ -105,28 +105,45 @@ def parse_container_config(
         "stop": container_name not in config.option.docker_dont_stop,
     }
 
+    environment = None
     if reader.getstring("environment"):
-        env = getenvdict(reader, "environment")
-        kwargs["environment"] = env
+        environment = getenvdict(reader, "environment")
 
+    hc_cmd = hc_interval = hc_timeout = hc_start_period = hc_retries = None
     if reader.getstring("healthcheck_cmd"):
-        kwargs["healthcheck_cmd"] = reader.getstring("healthcheck_cmd")
+        hc_cmd = reader.getstring("healthcheck_cmd")
     if reader.getstring("healthcheck_interval"):
-        kwargs["healthcheck_interval"] = gettime(reader, "healthcheck_interval")
+        hc_interval = gettime(reader, "healthcheck_interval")
     if reader.getstring("healthcheck_timeout"):
-        kwargs["healthcheck_timeout"] = gettime(reader, "healthcheck_timeout")
+        hc_timeout = gettime(reader, "healthcheck_timeout")
     if reader.getstring("healthcheck_start_period"):
-        kwargs["healthcheck_start_period"] = gettime(reader, "healthcheck_start_period")
+        hc_start_period = gettime(reader, "healthcheck_start_period")
     if reader.getstring("healthcheck_retries"):
-        kwargs["healthcheck_retries"] = getint(reader, "healthcheck_retries")
+        hc_retries = getint(reader, "healthcheck_retries")
 
+    ports = None
     if reader.getstring("ports"):
-        kwargs["ports"] = [Port(line) for line in reader.getlist("ports")]
+        ports = [Port(line) for line in reader.getlist("ports")]
 
+    links = None
     if reader.getstring("links"):
-        kwargs["links"] = [Link(line) for line in reader.getlist("links")]
+        links = [Link(line) for line in reader.getlist("links")]
 
+    volumes = None
     if reader.getstring("volumes"):
-        kwargs["volumes"] = [Volume(line) for line in reader.getlist("volumes")]
+        volumes = [Volume(line) for line in reader.getlist("volumes")]
 
-    return ContainerConfig(**kwargs)
+    return ContainerConfig(
+        name=container_name,
+        image=Image(reader.getstring("image")),
+        stop=container_name not in config.option.docker_dont_stop,
+        environment=environment,
+        healthcheck_cmd=hc_cmd,
+        healthcheck_interval=hc_interval,
+        healthcheck_timeout=hc_timeout,
+        healthcheck_start_period=hc_start_period,
+        healthcheck_retries=hc_retries,
+        ports=ports,
+        links=links,
+        volumes=volumes,
+    )
