@@ -11,6 +11,7 @@ from tox.config.loader.section import Section
 from tox.execute.api import Outcome
 from tox.plugin import impl
 from tox.tox_env.api import ToxEnv
+from tox.tox_env.errors import Fail
 
 from tox_docker.config import RunningContainers
 from tox_docker.plugin import (
@@ -82,7 +83,9 @@ def tox_before_run_commands(tox_env: ToxEnv) -> None:
         except HealthCheckFailed:
             tox_env.interrupt()
             clean_up_containers(tox_env)
-            raise
+            raise Fail(
+                f"{container_config.image!r} (from {container_config.name!r}) failed health check"
+            )
 
         tox_env.conf["set_env"].update(get_env_vars(container_config, container))
 
