@@ -1,13 +1,16 @@
 __all__ = (
-    "tox_before_run_commands",
-    "tox_after_run_commands",
+    "tox_add_env_config",
     "tox_add_option",
+    "tox_after_run_commands",
+    "tox_before_run_commands",
 )
 
 from typing import List
 
 from tox.config.cli.parser import ToxParser
 from tox.config.loader.section import Section
+from tox.config.main import Config
+from tox.config.sets import EnvConfigSet
 from tox.execute.api import Outcome
 from tox.plugin import impl
 from tox.tox_env.api import ToxEnv
@@ -27,10 +30,11 @@ from tox_docker.tox4.config import DockerConfigSet, parse_container_config
 from tox_docker.tox4.log import log
 
 
-def get_docker_configs(tox_env: ToxEnv) -> List[DockerConfigSet]:
+@impl
+def tox_add_env_config(env_conf: EnvConfigSet, config: Config) -> None:
     def build_docker_config_set(container_name: object) -> DockerConfigSet:
         assert isinstance(container_name, str)
-        docker_conf = tox_env.core._conf.get_section_config(
+        docker_conf = config.get_section_config(
             section=Section("docker", container_name),
             base=[],
             of_type=DockerConfigSet,
@@ -40,7 +44,7 @@ def get_docker_configs(tox_env: ToxEnv) -> List[DockerConfigSet]:
             raise ValueError(f"Missing [docker:{container_name}] in tox.ini")
         return docker_conf
 
-    tox_env.conf.add_config(
+    env_conf.add_config(
         keys=["docker"],
         of_type=List[DockerConfigSet],
         default=[],
@@ -48,12 +52,10 @@ def get_docker_configs(tox_env: ToxEnv) -> List[DockerConfigSet]:
         factory=build_docker_config_set,  # type: ignore
     )
 
-    return tox_env.conf.load("docker")
-
 
 @impl
 def tox_before_run_commands(tox_env: ToxEnv) -> None:
-    docker_confs = get_docker_configs(tox_env)
+    docker_confs = tox_env.conf.load("docker")
 
     container_configs = [
         parse_container_config(docker_conf) for docker_conf in docker_confs
@@ -98,7 +100,8 @@ def tox_after_run_commands(
 
 
 def clean_up_containers(tox_env: ToxEnv) -> None:
-    docker_confs = get_docker_configs(tox_env)
+    docker_confs = tox_env.conf.load("docker")
+
     container_configs = [
         parse_container_config(docker_conf) for docker_conf in docker_confs
     ]
