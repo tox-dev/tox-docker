@@ -296,12 +296,16 @@ def tox_runtest_pre(venv):  # noqa: C901
             links[other_container.id] = alias
 
         image = container_config["image"]
+        args = [image]
+        cmd = container_config.get("cmd")
+        if cmd:
+            args.append(cmd)
         environment = container_config.get("environment", {})
 
         action.setactivity("docker", f"run {image!r} (from {container_name!r})")
         with action:
             container = docker.containers.run(
-                image,
+                *args,
                 detach=True,
                 environment=environment,
                 healthcheck=healthcheck,
