@@ -141,6 +141,9 @@ def tox_configure(config):  # noqa: C901
             env = getenvdict(reader, "environment")
             container_configs[container_name]["environment"] = env
 
+        if reader.getstring("cmd"):
+            container_configs[container_name]["cmd"] = reader.getstring("cmd")
+
         if reader.getstring("healthcheck_cmd"):
             container_configs[container_name]["healthcheck_cmd"] = reader.getstring(
                 "healthcheck_cmd"
