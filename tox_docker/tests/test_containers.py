@@ -11,12 +11,7 @@ def test_it_can_run_two_of_the_same_image():
 
 def test_can_run_with_command():
     default = find_container("networking-one")
-
-    import json
-
-    print(json.dumps(default.attrs, sort_keys=True, indent=4))
-
     custom = find_container("custom-command")
 
-    assert default.attrs["Args"] == ["/run.sh"]
+    assert default.attrs["Args"] == []
     assert custom.attrs["Args"] == ["/run.sh", "with", "some", "options"]
