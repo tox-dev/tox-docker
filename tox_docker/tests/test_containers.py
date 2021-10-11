@@ -17,5 +17,5 @@ def test_can_run_with_command():
     
     custom = find_container("networking-cmd")
 
-    assert default.attrs["Args"] == ['/run.sh']
-    assert custom.attrs["Args"] == ['/run.sh', 'with', 'some', 'options']
+    assert default.attrs["Args"] == ["/run.sh"]
+    assert custom.attrs["Args"] == ["/run.sh", "with", "some", "options"]
