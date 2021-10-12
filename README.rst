@@ -116,6 +116,14 @@ The ``[docker:container-name]`` section may contain the following directives:
     test run until the container reports healthy, and will fail the test
     run if it never does so (within the parameters specified).
 
+``cmd``
+    A string representing the container command to run. Refer to the Dockerfile reference for more detail.
+
+``entrypoint``
+    A string representing the container entrypoint.  Note: setting this option clears the defined command,
+    so you must also define the ``cmd``. Refer to the Dockerfile reference for more detail.
+
+
 Command-Line Arguments
 ----------------------
 
