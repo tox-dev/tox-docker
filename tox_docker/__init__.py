@@ -143,6 +143,9 @@ def tox_configure(config):  # noqa: C901
 
         if reader.getstring("cmd"):
             container_configs[container_name]["cmd"] = reader.getstring("cmd")
+        
+        if reader.getstring("entrypoint"):
+            container_configs[container_name]["entrypoint"] = reader.getstring("entrypoint")
 
         if reader.getstring("healthcheck_cmd"):
             container_configs[container_name]["healthcheck_cmd"] = reader.getstring(
@@ -306,6 +309,7 @@ def tox_runtest_pre(venv):  # noqa: C901
             container = docker.containers.run(
                 image,
                 command=container_config.get("cmd"),
+                entrypoint=container_config.get("entrypoint"),
                 detach=True,
                 environment=environment,
                 healthcheck=healthcheck,

@@ -15,3 +15,9 @@ def test_can_run_with_command():
     assert custom.attrs["Path"] == "/run.sh"
     assert custom.attrs["Args"] == ["with", "some", "options"]
     assert custom.attrs["Config"]["Cmd"] == ["/run.sh", "with", "some", "options"]
+
+
+def test_can_run_with_entrypoint():
+    entrypoint = find_container("custom-entrypoint")
+
+    assert entrypoint.attrs["Config"]["Entrypoint"] == ["/bin/bash"]
