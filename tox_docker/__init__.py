@@ -143,9 +143,11 @@ def tox_configure(config):  # noqa: C901
 
         if reader.getstring("cmd"):
             container_configs[container_name]["cmd"] = reader.getstring("cmd")
-        
+
         if reader.getstring("entrypoint"):
-            container_configs[container_name]["entrypoint"] = reader.getstring("entrypoint")
+            container_configs[container_name]["entrypoint"] = reader.getstring(
+                "entrypoint"
+            )
 
         if reader.getstring("healthcheck_cmd"):
             container_configs[container_name]["healthcheck_cmd"] = reader.getstring(
