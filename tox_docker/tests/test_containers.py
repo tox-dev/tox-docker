@@ -12,8 +12,6 @@ def test_it_can_run_two_of_the_same_image():
 def test_can_run_with_command():
     custom = find_container("custom-command")
 
-    import json
-
-    print(json.dumps(custom.attrs, sort_keys=True, indent=4))
-
-    assert custom.attrs["Args"] == ["/run.sh", "with", "some", "options"]
+    assert custom.attrs["Path"] == "/run.sh"
+    assert custom.attrs["Args"] == ["with", "some", "options"]
+    assert custom.attrs["Config"]["Cmd"] == ["/run.sh", "with", "some", "options"]
