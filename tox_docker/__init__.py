@@ -1,4 +1,5 @@
 import os
+import random
 import re
 import socket
 import sys
@@ -307,7 +308,7 @@ def tox_runtest_pre(venv):  # noqa: C901
                 healthcheck=healthcheck,
                 labels={"tox_docker_container_name": container_name},
                 links=links,
-                name=container_name,
+                name=f"{container_name}_{random.randint(100000, 999999)}",
                 ports=ports,
                 publish_all_ports=len(ports) == 0,
                 mounts=container_config.get("mounts", []),
