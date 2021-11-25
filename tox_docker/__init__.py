@@ -250,7 +250,9 @@ def tox_runtest_pre(venv):  # noqa: C901
         seen.add(container_name)
 
         image = container_configs[container_name]["image"]
-        name, _, tag = image.partition(":")
+        image_name_part = image.split(":")
+        tag = image_name_part.pop()
+        name = ":".join(image_name_part)
 
         try:
             docker.images.get(image)
