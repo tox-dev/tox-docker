@@ -6,7 +6,7 @@ def test_exposed_ports_are_accessible_to_test_runs():
     host = os.environ["HEALTHCHECK_BUILTIN_HOST"]
     port = os.environ["HEALTHCHECK_BUILTIN_8000_TCP_PORT"]
 
-    response = urlopen(f"http://{host}:{port}/")
+    response = urlopen(f"http://{host}:{port}/", timeout=5)
     assert response.getcode() == 200
     assert b"Directory listing for /" in response.read()
 

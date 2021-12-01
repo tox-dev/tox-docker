@@ -10,5 +10,5 @@ def test_the_image_is_healthy(instance):
     port = os.environ[f"{instance}_8000_TCP_PORT"]
     url = f"http://{host}:{port}/healthy"
 
-    response = urlopen(url)
+    response = urlopen(url, timeout=5)
     assert response.getcode() == 200, f"GET {url} => {response.getcode()}"
