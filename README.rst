@@ -201,7 +201,7 @@ variable should be the hostname or ip address used to connect to the container.
 Version Compatibility
 ---------------------
 
-Tox-docker requires tox to be run in Python 3.6 or newer, and requires tox
+Tox-docker requires tox to be run in Python 3.7 or newer, and requires tox
 version 3.0 or newer. Older versions of tox-docker may work with older
 versions of Python or tox, but these configurations are no longer supported.
 

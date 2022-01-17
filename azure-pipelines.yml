@@ -4,14 +4,14 @@ jobs:
     vmImage: 'ubuntu-latest'
   strategy:
     matrix:
+      Python310:
+        python.version: '3.10'
       Python39:
         python.version: '3.9'
       Python38:
         python.version: '3.8'
       Python37:
         python.version: '3.7'
-      Python36:
-        python.version: '3.6'
     maxParallel: 4
 
   steps:
