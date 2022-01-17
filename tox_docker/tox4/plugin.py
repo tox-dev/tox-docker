@@ -9,10 +9,10 @@ from typing import List
 
 from tox.config.cli.parser import ToxParser
 from tox.config.loader.section import Section
-from tox.config.main import Config
 from tox.config.sets import EnvConfigSet
 from tox.execute.api import Outcome
 from tox.plugin import impl
+from tox.session.state import State
 from tox.tox_env.api import ToxEnv
 from tox.tox_env.errors import Fail
 
@@ -31,10 +31,10 @@ from tox_docker.tox4.log import log
 
 
 @impl
-def tox_add_env_config(env_conf: EnvConfigSet, config: Config) -> None:
+def tox_add_env_config(env_conf: EnvConfigSet, state: State) -> None:
     def build_docker_config_set(container_name: object) -> DockerConfigSet:
         assert isinstance(container_name, str)
-        docker_conf = config.get_section_config(
+        docker_conf = state.conf.get_section_config(
             section=Section("docker", container_name),
             base=[],
             of_type=DockerConfigSet,
