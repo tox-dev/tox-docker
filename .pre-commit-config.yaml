@@ -3,7 +3,7 @@
 repos:
   # General housekeeping
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.0.1
+    rev: v4.1.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -21,12 +21,12 @@ repos:
       - id: seed-isort-config
 
   - repo: https://github.com/PyCQA/isort
-    rev: 5.9.3
+    rev: 5.10.1
     hooks:
       - id: isort
 
   - repo: https://github.com/psf/black
-    rev: 21.8b0
+    rev: 21.12b0
     hooks:
     - id: black
       language_version: python3
