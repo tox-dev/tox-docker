@@ -1,4 +1,5 @@
 from typing import Collection, Dict, Mapping, Optional
+import os
 import os.path
 import re
 
@@ -17,6 +18,19 @@ IMAGE_NAME = re.compile(
     r"(?::((?![.-])[a-zA-Z0-9_.-]{1,128}))?"
     r"$"
 )
+
+
+def runas_name(container_name: str, pid: Optional[int] = None) -> str:
+    """
+    Generate a name safe for use in parallel scenarios
+
+    This can be either separate invocations of tox (eg on a busy CI server)
+    or `tox -p`. The returned name will be stable for a given container name,
+    to avoid needing to maintain a mapping.
+
+    """
+    pid = pid or os.getpid()
+    return f"{container_name}-tox-{pid}"
 
 
 class Image:
@@ -58,7 +72,10 @@ class Link:
         if sep and not alias:
             raise ValueError(f"Link '{target}:' missing alias")
 
-        self.target = target
+        self.target = runas_name(target)
+
+        # this is what the target will be known as INSIDE the
+        # container, so don't substitute the runas_name here
         self.alias = alias or target
 
 
@@ -103,6 +120,7 @@ class ContainerConfig:
         volumes: Optional[Collection[Volume]] = None,
     ) -> None:
         self.name = name
+        self.runas_name = runas_name(name)
         self.image = image
         self.stop = stop
         self.environment: Mapping[str, str] = environment or {}

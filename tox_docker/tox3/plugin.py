@@ -6,6 +6,7 @@ __all__ = (
 )
 
 from typing import Dict
+import os
 
 from tox import hookimpl
 from tox.action import Action
@@ -40,6 +41,13 @@ def _newaction(venv: VirtualEnv, message: str) -> Action:
         return venv.session.newaction(venv, message)
 
 
+def _config_name(running_name: str) -> str:
+    # inverse of tox_docker.config.runas_name()
+    suffix = f"-tox-{os.getpid()}"
+    assert running_name.endswith(suffix)
+    return running_name[: -len(suffix)]
+
+
 @hookimpl
 def tox_configure(config: Config) -> None:
     container_config_names = discover_container_configs(config)
@@ -51,7 +59,6 @@ def tox_configure(config: Config) -> None:
                 f"Container {container_name!r} not found (from --docker-dont-stop)"
             )
 
-    container_configs: Dict[str, ContainerConfig] = {}
     for container_name in container_config_names:
         CONTAINER_CONFIGS[container_name] = parse_container_config(
             config, container_name, container_config_names
@@ -80,13 +87,14 @@ def tox_runtest_pre(venv: VirtualEnv) -> None:
         docker_pull(container_config, log)
 
     ENV_CONTAINERS.setdefault(venv, {})
-    containers = ENV_CONTAINERS[venv]
+    running_containers = ENV_CONTAINERS[venv]
 
     for container_config in env_container_configs:
-        container = docker_run(container_config, containers, log)
-        containers[container_config.name] = container
+        container = docker_run(container_config, running_containers, log)
+        running_containers[container_config.runas_name] = container
 
-    for container_name, container in containers.items():
+    for running_name, container in running_containers.items():
+        container_name = _config_name(running_name)
         container_config = CONTAINER_CONFIGS[container_name]
         try:
             docker_health_check(container_config, container, log)
@@ -96,7 +104,8 @@ def tox_runtest_pre(venv: VirtualEnv) -> None:
             tox_runtest_post(venv)
             raise
 
-    for container_name, container in containers.items():
+    for running_name, container in running_containers.items():
+        container_name = _config_name(running_name)
         container_config = CONTAINER_CONFIGS[container_name]
         for key, val in get_env_vars(container_config, container).items():
             venv.envconfig.setenv[key] = val
@@ -106,7 +115,7 @@ def tox_runtest_pre(venv: VirtualEnv) -> None:
 def tox_runtest_post(venv: VirtualEnv) -> None:
     env_containers: RunningContainers = ENV_CONTAINERS.get(venv, {})
     containers_and_configs = [
-        (CONTAINER_CONFIGS[name], container)
+        (CONTAINER_CONFIGS[_config_name(name)], container)
         for name, container in env_containers.items()
     ]
     log = make_logger(venv)

@@ -128,6 +128,18 @@ aspects of tox-docker's behavior can be changed at run-time:
     ``docker exec ...``. May be specified multiple times to leave several
     containers running.
 
+Container Naming & Parallel Runs
+--------------------------------
+
+Since version 4, tox-docker adds a suffix to the name of running containers,
+so that parallel invocations of tox may succeed (eg on a busy CI server).
+The details of the name suffix are not specified, and may change in a future
+version -- you should not rely on the details of the generated name.
+
+Even with unique container names, parallel runs may still fail, if you map a
+static exposed port number for a container (as the tox host will not let two
+processes bind the same port).
+
 Example
 -------
 

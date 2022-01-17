@@ -77,7 +77,7 @@ def tox_before_run_commands(tox_env: ToxEnv) -> None:
     for container_config in container_configs:
         container = docker_run(container_config, running_containers, log)
         config_and_container.append((container_config, container))
-        running_containers[container_config.name] = container
+        running_containers[container_config.runas_name] = container
 
     for container_config, container in config_and_container:
         try:

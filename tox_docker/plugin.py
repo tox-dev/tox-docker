@@ -100,12 +100,11 @@ def docker_run(
     log(f"run {container_config.image!r} (from {container_config.name!r})")
     container = docker.containers.run(
         str(container_config.image),
+        name=container_config.runas_name,
         detach=True,
         environment=container_config.environment,
         healthcheck=healthcheck or None,
-        labels={"tox_docker_container_name": container_config.name},
         links=links,
-        name=container_config.name,
         ports=ports,
         publish_all_ports=len(ports) == 0,
         mounts=container_config.mounts,
@@ -147,7 +146,7 @@ def docker_stop(
 def docker_get(container_config: ContainerConfig) -> Optional[Container]:
     docker = docker_module.from_env(version="auto")
     try:
-        return docker.containers.get(container_config.name)
+        return docker.containers.get(container_config.runas_name)
     except NotFound:
         return None
 

@@ -1,6 +1,6 @@
 import pytest
 
-from tox_docker.config import Link
+from tox_docker.config import Link, runas_name
 from tox_docker.tests.util import find_container
 
 
@@ -13,10 +13,10 @@ def test_linked_containers_can_communicate() -> None:
 
 
 def test_link_parsing() -> None:
-    assert Link("httpd").target == "httpd"
+    assert Link("httpd").target == runas_name("httpd")
     assert Link("httpd").alias == "httpd"
 
-    assert Link("httpd:apache").target == "httpd"
+    assert Link("httpd:apache").target == runas_name("httpd")
     assert Link("httpd:apache").alias == "apache"
 
 
