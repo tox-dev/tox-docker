@@ -1,16 +1,30 @@
 from typing import Collection, Dict, Mapping, Optional
 import os.path
+import re
 
 from docker.models.containers import Container as DockerContainer
 from docker.types import Mount
 
 RunningContainers = Dict[str, DockerContainer]
 
+IMAGE_NAME = re.compile(
+    # adapted from https://stackoverflow.com/a/39672069, used under CC-BY-SA
+    r"^"
+    r"("
+    r"(?:(?=[^:\/]{1,253})(?!-)[a-zA-Z0-9-]{1,63}(?<!-)(?:\.(?!-)[a-zA-Z0-9-]{1,63}(?<!-))*(?::[0-9]{1,5})?/)?"
+    r"(?![._-])(?:[a-z0-9._-]*)(?<![._-])(?:/(?![._-])[a-z0-9._-]*(?<![._-]))*"
+    r")"
+    r"(?::((?![.-])[a-zA-Z0-9_.-]{1,128}))?"
+    r"$"
+)
+
 
 class Image:
     def __init__(self, config_line: str) -> None:
-        self.name, _, tag = config_line.partition(":")
-        self.tag = tag or None
+        match = IMAGE_NAME.match(config_line)
+        if not match:
+            raise ValueError(f"{config_line!r} is not a valid image name")
+        self.name, self.tag = match.groups()
 
     def __str__(self) -> str:
         if self.tag:
