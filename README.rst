@@ -74,6 +74,11 @@ The ``[docker:container-name]`` section may contain the following directives:
     ``<container_name>_HOST`` is set for the test run, indicating the host
     name or IP address to use to communicate with the container.
 
+    If you set the ``HOST_PORT`` to zero, a random available port will be
+    assigned on the tox host. This is useful in case the container does not
+    ``EXPOSE`` the port you need, or if you want to map only some of the
+    ``EXPOSE``\d ports.
+
     In both environment variables, the container name part is converted to
     upper case, and all non-alphanumeric characters are replaced with an
     underscore (``_``).
