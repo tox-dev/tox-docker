@@ -1,10 +1,10 @@
 import pytest
 
-from tox_docker import _validate_link_line
+from tox_docker.config import Link, runas_name
 from tox_docker.tests.util import find_container
 
 
-def test_linked_containers_can_communicate():
+def test_linked_containers_can_communicate() -> None:
     outer_container = find_container("networking-two")
     # the outer container should have a link named "linked_host"
     # to the inner container, listening on port 1234
@@ -12,15 +12,14 @@ def test_linked_containers_can_communicate():
     assert exitcode == 0
 
 
-def test_validate_link_line():
-    names = {"httpd"}
-    assert _validate_link_line("httpd:apache", names) == ("httpd", "apache")
-    assert _validate_link_line("httpd", names) == ("httpd", "httpd")
+def test_link_parsing() -> None:
+    assert Link("httpd").target == runas_name("httpd")
+    assert Link("httpd").alias == "httpd"
+
+    assert Link("httpd:apache").target == runas_name("httpd")
+    assert Link("httpd:apache").alias == "apache"
 
 
-def test_validate_link_line_rejects_dangling_comma():
-    names = {"httpd"}
+def test_link_parsing_rejects_trailing_colon() -> None:
     with pytest.raises(ValueError):
-        _validate_link_line("httpd:", names)
-    with pytest.raises(ValueError):
-        _validate_link_line("httpd", set())
+        Link("httpd:")

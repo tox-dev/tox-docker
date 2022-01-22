@@ -9,6 +9,12 @@ repos:
       - id: trailing-whitespace
 
   # Python code formatting
+  - repo: https://github.com/myint/autoflake
+    rev: v1.4
+    hooks:
+      - id: autoflake
+        args: [--in-place, --remove-all-unused-imports, --remove-unused-variable, --exclude, 'tox_docker/__init__.py']
+
   - repo: https://github.com/asottile/seed-isort-config
     rev: v2.2.0
     hooks:

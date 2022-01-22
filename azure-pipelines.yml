@@ -4,14 +4,14 @@ jobs:
     vmImage: 'ubuntu-latest'
   strategy:
     matrix:
+      Python310:
+        python.version: '3.10'
       Python39:
         python.version: '3.9'
       Python38:
         python.version: '3.8'
       Python37:
         python.version: '3.7'
-      Python36:
-        python.version: '3.6'
     maxParallel: 4
 
   steps:
@@ -19,6 +19,15 @@ jobs:
     inputs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
+
+  - script: ./ci.sh tox-4.x docker-5.x
+    displayName: 'Tox 4.x, Docker 5.x'
+
+  - script: ./ci.sh tox-4.x docker-4.x
+    displayName: 'Tox 4.x, Docker 4.x'
+
+  - script: ./ci.sh tox-4.x docker-3.x
+    displayName: 'Tox 4.x, Docker 3.x'
 
   - script: ./ci.sh tox-3.x docker-5.x
     displayName: 'Tox 3.x, Docker 5.x'
