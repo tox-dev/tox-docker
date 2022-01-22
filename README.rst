@@ -210,6 +210,14 @@ versions of Python or tox, but these configurations are no longer supported.
 Change Log
 ==========
 
+* 4.0.0
+    * Support tox 4 as well as tox 3
+    * Drop support for Python 3.6
+    * Give running containers a unique name to support concurrent & parallel
+      tox use cases (thanks @chaitu-tk and @goodtune for inspiration)
+    * Add support for image registry URLs that contain a port
+* 3.1.0
+    * Support docker-py 5.x
 * 3.0.0
     * Support tox 3 and newer only
     * Automatically cleans up started docker containers, even if Tox
