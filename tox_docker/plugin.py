@@ -108,6 +108,7 @@ def docker_run(
         ports=ports,
         publish_all_ports=len(ports) == 0,
         mounts=container_config.mounts,
+        privileged=container_config.privileged,
     )
     container.reload()  # TODO: why do we need this?
     return container

@@ -118,6 +118,7 @@ class ContainerConfig:
         ports: Optional[Collection[Port]] = None,
         links: Optional[Collection[Link]] = None,
         volumes: Optional[Collection[Volume]] = None,
+        privileged: Optional[bool] = False,
     ) -> None:
         self.name = name
         self.runas_name = runas_name(name)
@@ -127,6 +128,7 @@ class ContainerConfig:
         self.ports: Collection[Port] = ports or {}
         self.links: Collection[Link] = links or {}
         self.mounts: Collection[Mount] = [v.docker_mount for v in volumes or ()]
+        self.privileged: privileged
 
         self.healthcheck_cmd = healthcheck_cmd
         self.healthcheck_interval = (

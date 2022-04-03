@@ -133,6 +133,10 @@ def parse_container_config(
     if reader.getstring("volumes"):
         volumes = [Volume(line) for line in reader.getlist("volumes")]
 
+    privileged = False
+    if reader.getstring("privileged"):
+        privileged = bool(reader.getstring("privileged")
+
     return ContainerConfig(
         name=container_name,
         image=Image(reader.getstring("image")),
@@ -146,4 +150,5 @@ def parse_container_config(
         ports=ports,
         links=links,
         volumes=volumes,
+        privileged=privileged,
     )
