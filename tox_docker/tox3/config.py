@@ -135,7 +135,7 @@ def parse_container_config(
 
     privileged = False
     if reader.getstring("privileged"):
-        privileged = bool(reader.getstring("privileged")
+        privileged = bool(reader.getstring("privileged"))
 
     return ContainerConfig(
         name=container_name,
