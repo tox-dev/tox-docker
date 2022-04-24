@@ -128,7 +128,7 @@ class ContainerConfig:
         self.ports: Collection[Port] = ports or {}
         self.links: Collection[Link] = links or {}
         self.mounts: Collection[Mount] = [v.docker_mount for v in volumes or ()]
-        self.privileged: privileged
+        self.privileged = privileged
 
         self.healthcheck_cmd = healthcheck_cmd
         self.healthcheck_interval = (
