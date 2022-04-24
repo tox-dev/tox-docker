@@ -59,7 +59,6 @@ class DockerConfigSet(ConfigSet):
             desc="run in privileged mode",
         )
 
-
         self.add_config(
             keys=["healthcheck_cmd"],
             of_type=str,
@@ -109,5 +108,5 @@ def parse_container_config(docker_config: DockerConfigSet) -> ContainerConfig:
         ports=docker_config["ports"],
         links=docker_config["links"],
         volumes=docker_config["volumes"],
-        privileged=docker_config["privileged"]
+        privileged=docker_config["privileged"],
     )
