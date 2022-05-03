@@ -5,6 +5,12 @@ set -x
 tox_version=$1
 docker_version=$2
 
+if [ "$tox_version" = "tox-4.x" ]; then
+    mypy_target=mypy-tox4
+else
+    mypy_target=mypy-tox3
+fi
+
 
 # our tox.ini sets up volumes within .tox, so make sure it exists
 # before trying to run tox...
