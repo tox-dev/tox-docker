@@ -121,6 +121,10 @@ The ``[docker:container-name]`` section may contain the following directives:
     test run until the container reports healthy, and will fail the test
     run if it never does so (within the parameters specified).
 
+``user``
+    The `user<https://docs.docker.com/engine/reference/run/#user>`__ Username
+    or UID to run commands as inside the container.
+
 Command-Line Arguments
 ----------------------
 
@@ -182,6 +186,8 @@ Example
     # testing use cases, as this could persist data between test runs
     volumes =
         bind:rw:/my/own/datadir:/var/lib/postgresql/data
+    # The uid (or username) to run commands as inside the container.
+    user = 1234
 
     [docker:appserv]
     # You can use any value that `docker run` would accept as the image

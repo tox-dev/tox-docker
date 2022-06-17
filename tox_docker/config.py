@@ -19,6 +19,9 @@ IMAGE_NAME = re.compile(
     r"$"
 )
 
+# uid or username. valid username regex from useradd(8)
+USER = re.compile(r"[a-z_][a-z0-9_-]*[$]?|[0-9]+")
+
 
 def runas_name(container_name: str, pid: Optional[int] = None) -> str:
     """
@@ -103,6 +106,19 @@ class Volume:
         )
 
 
+class User:
+    def __init__(self, config_line: str) -> None:
+        match = USER.match(config_line)
+        if not match:
+            raise ValueError(f"{config_line!r} is not a valid user name")
+        self.username = config_line
+        self.uid = None
+        try:
+            self.uid = int(self.username)
+        except ValueError:
+            pass
+
+
 class ContainerConfig:
     def __init__(
         self,
@@ -118,6 +134,7 @@ class ContainerConfig:
         ports: Optional[Collection[Port]] = None,
         links: Optional[Collection[Link]] = None,
         volumes: Optional[Collection[Volume]] = None,
+        user: Optional[User] = None,
     ) -> None:
         self.name = name
         self.runas_name = runas_name(name)
@@ -139,3 +156,4 @@ class ContainerConfig:
             int(healthcheck_start_period) if healthcheck_start_period else None
         )
         self.healthcheck_retries = healthcheck_retries
+        self.user = user

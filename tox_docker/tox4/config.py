@@ -2,7 +2,7 @@ from typing import Dict, List
 
 from tox.config.sets import ConfigSet
 
-from tox_docker.config import ContainerConfig, Image, Link, Port, Volume
+from tox_docker.config import ContainerConfig, Image, Link, Port, User, Volume
 
 # nanoseconds in a second; named "SECOND" so that "1.5 * SECOND" makes sense
 SECOND = 1000000000
@@ -86,6 +86,12 @@ class DockerConfigSet(ConfigSet):
             default=0,
             desc="docker healthcheck retry count",
         )
+        self.add_config(
+            keys=["user"],
+            of_type=User,
+            default=None,
+            desc="Username or UID to run commands as inside the container",
+        )
 
 
 def parse_container_config(docker_config: DockerConfigSet) -> ContainerConfig:
@@ -102,4 +108,5 @@ def parse_container_config(docker_config: DockerConfigSet) -> ContainerConfig:
         ports=docker_config["ports"],
         links=docker_config["links"],
         volumes=docker_config["volumes"],
+        user=docker_config["user"],
     )
