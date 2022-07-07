@@ -41,8 +41,8 @@ class DockerConfigSet(ConfigSet):
         )
         self.add_config(
             keys=["privileged"],
-            of_type=bool,
-            default=False,
+            of_type=str,
+            default="false",
             desc="give extended privileges to this container",
             post_process=getboolean,
         )
