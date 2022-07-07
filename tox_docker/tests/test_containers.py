@@ -17,7 +17,7 @@ def test_container_has_unique_runas_suffix() -> None:
     # randomly-chosen suffix, could be PID (it is), or something else
 
 
-def test_can_run_with_command():
+def test_can_run_with_command() -> None:
     container = find_container("custom-command")
 
     assert container.attrs["Path"] == "echo"
