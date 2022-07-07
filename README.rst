@@ -51,6 +51,13 @@ The ``[docker:container-name]`` section may contain the following directives:
     This value is passed directly to Docker, and may be of any of the forms
     that Docker accepts in eg ``docker run``.
 
+``privileged``
+    A boolean (``true || false``) to set `runtime privilege
+    <https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities>`__.
+    This value is coerced to a boolean based of the same rules as
+    Python's default `ConfigParser
+    <https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.getboolean>`__.
+
 ``environment``
     A multi-line list of ``KEY=value`` settings which is used to set
     environment variables for the container. The variables are only available
