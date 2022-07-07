@@ -136,6 +136,7 @@ def parse_container_config(
     return ContainerConfig(
         name=container_name,
         image=Image(reader.getstring("image")),
+        command=reader.getstring("command"),
         stop=container_name not in config.option.docker_dont_stop,
         environment=environment,
         healthcheck_cmd=hc_cmd,

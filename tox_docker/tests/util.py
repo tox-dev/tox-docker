@@ -15,7 +15,7 @@ def find_container(instance_name: str) -> Container:
     # get the right runas_name()
     running_name = runas_name(instance_name, pid=os.getppid())
     client = docker.from_env(version="auto")
-    for container in client.containers.list():
+    for container in client.containers.list(all=True):
         container.attrs["Config"].get("Labels", {})
         if container.name == running_name:
             return container

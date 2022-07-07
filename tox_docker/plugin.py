@@ -100,6 +100,7 @@ def docker_run(
     log(f"run {container_config.image!r} (from {container_config.name!r})")
     container = docker.containers.run(
         str(container_config.image),
+        command=container_config.command,
         name=container_config.runas_name,
         detach=True,
         environment=container_config.environment,

@@ -15,3 +15,11 @@ def test_container_has_unique_runas_suffix() -> None:
     assert container.name != "healthcheck-builtin"
     # don't test the details of how we do this; the suffix could be some
     # randomly-chosen suffix, could be PID (it is), or something else
+
+
+def test_can_run_with_command():
+    container = find_container("custom-command")
+
+    assert container.attrs["Path"] == "echo"
+    assert container.attrs["Args"] == ["hello world"]
+    assert container.attrs["Config"]["Cmd"] == ["echo", "hello world"]

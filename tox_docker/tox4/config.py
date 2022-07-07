@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from tox.config.sets import ConfigSet
 
@@ -27,6 +27,12 @@ class DockerConfigSet(ConfigSet):
             default=Image(""),
             desc="docker image to run",
             post_process=image_required,
+        )
+        self.add_config(
+            keys=["command"],
+            of_type=Optional[str],
+            default=None,
+            desc="docker command to run in the container",
         )
         self.add_config(
             keys=["environment"],
