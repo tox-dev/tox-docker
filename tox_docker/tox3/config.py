@@ -123,7 +123,7 @@ def parse_container_config(
 
     privileged = False
     if reader.getstring("privileged"):
-        privileged = getboolean(reader, "privileged")
+        privileged = bool(getboolean(reader, "privileged"))
 
     environment = None
     if reader.getstring("environment"):
