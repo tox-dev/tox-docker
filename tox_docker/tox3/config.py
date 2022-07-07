@@ -53,6 +53,22 @@ def getint(reader: SectionReader, key: str) -> Optional[int]:
     return val
 
 
+def getboolean(reader: SectionReader, key: str) -> Optional[bool]:
+    val = reader.getstring(key)
+    if val is None:
+        return None
+
+    # Same implementation as:
+    # https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.getboolean
+    lower_val = val.lower().strip()
+    if lower_val in ("yes", "on", "true", "1"):
+        return True
+    if lower_val in ("no", "off", "false", "0"):
+        return False
+    msg = f"{val!r} is not a boolean (for {key} in [{reader.section_name}])"
+    raise ValueError(msg)
+
+
 def getenvdict(reader: SectionReader, key: str) -> Mapping[str, str]:
     environment = {}
     for value in reader.getlist(key):
@@ -105,6 +121,10 @@ def parse_container_config(
         "stop": container_name not in config.option.docker_dont_stop,
     }
 
+    privileged = False
+    if reader.getstring("privileged"):
+        privileged = getboolean(reader, "privileged")
+
     environment = None
     if reader.getstring("environment"):
         environment = getenvdict(reader, "environment")
@@ -137,6 +157,7 @@ def parse_container_config(
         name=container_name,
         image=Image(reader.getstring("image")),
         stop=container_name not in config.option.docker_dont_stop,
+        privileged=privileged,
         environment=environment,
         healthcheck_cmd=hc_cmd,
         healthcheck_interval=hc_interval,

@@ -109,6 +109,7 @@ class ContainerConfig:
         name: str,
         image: Image,
         stop: bool,
+        privileged: bool = False,
         environment: Optional[Mapping[str, str]] = None,
         healthcheck_cmd: Optional[str] = None,
         healthcheck_interval: Optional[float] = None,
@@ -123,6 +124,7 @@ class ContainerConfig:
         self.runas_name = runas_name(name)
         self.image = image
         self.stop = stop
+        self.privileged = privileged
         self.environment: Mapping[str, str] = environment or {}
         self.ports: Collection[Port] = ports or {}
         self.links: Collection[Link] = links or {}
