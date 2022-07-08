@@ -19,17 +19,6 @@ def image_required(image: Image) -> Image:
     return image
 
 
-def getboolean(val: str) -> bool:
-    # Same implementation as:
-    # https://docs.python.org/3/library/configparser.html#configparser.ConfigParser.getboolean
-    lower_val = val.lower().strip()
-    if lower_val in ("yes", "on", "true", "1"):
-        return True
-    if lower_val in ("no", "off", "false", "0"):
-        return False
-    raise ValueError(f"{val!r} is not a boolean")
-
-
 class DockerConfigSet(ConfigSet):
     def register_config(self) -> None:
         self.add_config(
@@ -41,10 +30,9 @@ class DockerConfigSet(ConfigSet):
         )
         self.add_config(
             keys=["privileged"],
-            of_type=str,
-            default="false",
+            of_type=bool,
+            default=False,
             desc="give extended privileges to this container",
-            post_process=getboolean,
         )
         self.add_config(
             keys=["environment"],
