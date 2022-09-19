@@ -113,7 +113,7 @@ The ``[docker:container-name]`` section may contain the following directives:
     <https://docs.docker.com/engine/reference/builder/#healthcheck>`__. The
     ``healthcheck_interval``, ``healthcheck_start_period``, and
     ``healthcheck_timeout`` are specified as a number of seconds.
-    The ``healtcheck_cmd`` is an argv list which must name a command and
+    ``healthcheck_cmd`` is an argv list which must name a command and
     arguments that can be run within the container; if not specified, any
     health check built in to the container is used.
 
