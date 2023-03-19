@@ -97,6 +97,10 @@ def docker_run(
         if not os.path.exists(source):
             raise ValueError(f"Volume source {source!r} does not exist")
 
+    user = None
+    if container_config.user:
+        user = container_config.user.uid or container_config.user.username
+
     log(f"run {container_config.image!r} (from {container_config.name!r})")
     container = docker.containers.run(
         str(container_config.image),
@@ -108,6 +112,7 @@ def docker_run(
         ports=ports,
         publish_all_ports=len(ports) == 0,
         mounts=container_config.mounts,
+        user=user,
     )
     container.reload()  # TODO: why do we need this?
     return container

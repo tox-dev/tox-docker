@@ -11,6 +11,7 @@ from tox_docker.config import (
     Link,
     Port,
     RunningContainers,
+    User,
     Volume,
 )
 
@@ -133,6 +134,10 @@ def parse_container_config(
     if reader.getstring("volumes"):
         volumes = [Volume(line) for line in reader.getlist("volumes")]
 
+    user = None
+    if reader.getstring("user"):
+        user = User(reader.getstring("user"))
+
     return ContainerConfig(
         name=container_name,
         image=Image(reader.getstring("image")),
@@ -146,4 +151,5 @@ def parse_container_config(
         ports=ports,
         links=links,
         volumes=volumes,
+        user=user,
     )
