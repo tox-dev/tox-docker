@@ -215,6 +215,10 @@ versions of Python or tox, but these configurations are no longer supported.
 Change Log
 ==========
 
+* 4.1.0
+    * Drop test support for docker (Python library) 3.x; add test support
+      for docker 6.x. Other versions may work, but we only support tested
+      versions.
 * 4.0.0
     * Support tox 4 as well as tox 3
     * Drop support for Python 3.6
