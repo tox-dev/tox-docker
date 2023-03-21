@@ -233,6 +233,9 @@ Change Log
 ==========
 
 * 4.1.0
+    * Drop test support for docker (Python library) 3.x; add test support
+      for docker 6.x. Other versions may work, but we only support tested
+      versions.
     * Add support for ``dockerfile`` and ``dockerfile_target`` directives
       to build local images
 * 4.0.0
