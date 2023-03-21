@@ -54,10 +54,19 @@ you wish to run during those tests::
 
 The ``[docker:container-name]`` section may contain the following directives:
 
-``image`` (required)
+``image``
     The `Docker image <https://docs.docker.com/glossary/#image>`__ to run.
     This value is passed directly to Docker, and may be of any of the forms
-    that Docker accepts in eg ``docker run``.
+    that Docker accepts in eg ``docker run``. One of ``image`` or
+    ``dockerfile`` is required.
+
+``dockerfile``
+    Path to a `Dockerfile <https://docs.docker.com/glossary/#dockerfile>`__
+    to build and run. One of ``dockerfile`` or ``image`` is required.
+
+``dockerfile_target``
+    Name of the build-stage to build in a multi-stage Dockerfile. An error
+    is raised if ``dockerfile_target`` is set without ``dockerfile`` set.
 
 ``environment``
     A multi-line list of ``KEY=value`` settings which is used to set
@@ -223,6 +232,9 @@ versions of Python or tox, but these configurations are no longer supported.
 Change Log
 ==========
 
+* 4.1.0
+    * Add support for ``dockerfile`` and ``dockerfile_target`` directives
+      to build local images
 * 4.0.0
     * Support tox 4 as well as tox 3
     * Drop support for Python 3.6

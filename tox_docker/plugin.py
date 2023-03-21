@@ -82,6 +82,7 @@ def docker_build(container_config: ContainerConfig, log: LogFunc) -> None:
     image, _ = docker.images.build(
         path=container_config.dockerfile.directory,
         dockerfile=container_config.dockerfile.filename,
+        target=container_config.dockerfile_target or None,
         pull=True,
         forcerm=True,
     )

@@ -107,6 +107,12 @@ def parse_container_config(
     if not image and not dockerfile:
         raise ValueError(f"{container_name}: specify one of image or dockerfile")
 
+    dockerfile_target = reader.getstring("dockerfile_target")
+    if dockerfile_target and not dockerfile:
+        raise ValueError(
+            f"{container_name}: dockerfile_target specified, but no dockerfile"
+        )
+
     environment = None
     if reader.getstring("environment"):
         environment = getenvdict(reader, "environment")
@@ -139,6 +145,7 @@ def parse_container_config(
         name=container_name,
         image=Image(image) if image else None,
         dockerfile=Dockerfile(dockerfile) if dockerfile else None,
+        dockerfile_target=dockerfile_target or "",
         stop=container_name not in config.option.docker_dont_stop,
         environment=environment,
         healthcheck_cmd=hc_cmd,

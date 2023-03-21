@@ -121,6 +121,7 @@ class ContainerConfig:
         name: str,
         image: Optional[Image],
         dockerfile: Optional[Dockerfile],
+        dockerfile_target: str,
         stop: bool,
         environment: Optional[Mapping[str, str]] = None,
         healthcheck_cmd: Optional[str] = None,
@@ -136,6 +137,7 @@ class ContainerConfig:
         self.runas_name = runas_name(name)
         self.image = image
         self.dockerfile = dockerfile
+        self.dockerfile_target = dockerfile_target
         self.stop = stop
         self.environment: Mapping[str, str] = environment or {}
         self.ports: Collection[Port] = ports or {}
