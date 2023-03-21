@@ -33,7 +33,7 @@ dots, hyphens, and underscores. Each ``[docker:container-name]`` section must
 contain at least an ``image`` directive, which must name a `Docker image
 <https://docs.docker.com/glossary/#image>`__ as you'd pass to ``docker
 run``; or a ``build`` directive, containing the path to a `Dockerfile
-<https://docs.docker.com/engine/reference/builder/>`__ as you'd pas to
+<https://docs.docker.com/glossary/#dockerfile>`__ as you'd pas to
 ``docker build``::
 
     [docker:db]
