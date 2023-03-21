@@ -52,7 +52,16 @@ def escape_env_var(varname: str) -> str:
     return "".join(varletters)
 
 
+def docker_build_or_pull(container_config: ContainerConfig, log: LogFunc) -> None:
+    if container_config.image:
+        docker_pull(container_config, log)
+    else:
+        docker_build(container_config, log)
+
+
 def docker_pull(container_config: ContainerConfig, log: LogFunc) -> None:
+    assert container_config.image
+
     docker = docker_module.from_env(version="auto")
 
     try:
@@ -60,6 +69,25 @@ def docker_pull(container_config: ContainerConfig, log: LogFunc) -> None:
     except ImageNotFound:
         log(f"pull {container_config.image!r} (from {container_config.name!r})")
         docker.images.pull(container_config.image.name, tag=container_config.image.tag)
+
+    container_config.runnable_image = docker.images.get(container_config.image.name)
+
+
+def docker_build(container_config: ContainerConfig, log: LogFunc) -> None:
+    assert container_config.dockerfile
+
+    docker = docker_module.from_env(version="auto")
+
+    log(f"build {container_config.dockerfile!r}")
+    image, _ = docker.images.build(
+        path=container_config.dockerfile.directory,
+        dockerfile=container_config.dockerfile.filename,
+        pull=True,
+        forcerm=True,
+    )
+    log(f"built: {image.short_id}")
+
+    container_config.runnable_image = image
 
 
 def docker_run(
@@ -97,9 +125,12 @@ def docker_run(
         if not os.path.exists(source):
             raise ValueError(f"Volume source {source!r} does not exist")
 
-    log(f"run {container_config.image!r} (from {container_config.name!r})")
+    assert container_config.runnable_image
+    image_name = container_config.image or container_config.runnable_image.short_id
+    log(f"run {image_name!r} (from {container_config.name!r})")
+
     container = docker.containers.run(
-        str(container_config.image),
+        container_config.runnable_image.id,
         name=container_config.runas_name,
         detach=True,
         environment=container_config.environment,

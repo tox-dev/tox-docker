@@ -7,6 +7,7 @@ import py
 
 from tox_docker.config import (
     ContainerConfig,
+    Dockerfile,
     Image,
     Link,
     Port,
@@ -99,11 +100,12 @@ def parse_container_config(
         toxworkdir=config.toxworkdir,
     )
 
-    kwargs = {
-        "name": container_name,
-        "image": Image(reader.getstring("image")),
-        "stop": container_name not in config.option.docker_dont_stop,
-    }
+    image = reader.getstring("image")
+    dockerfile = reader.getstring("dockerfile")
+    if image and dockerfile:
+        raise ValueError(f"{container_name}: specify image or dockerfile, not both")
+    if not image and not dockerfile:
+        raise ValueError(f"{container_name}: specify one of image or dockerfile")
 
     environment = None
     if reader.getstring("environment"):
@@ -135,7 +137,8 @@ def parse_container_config(
 
     return ContainerConfig(
         name=container_name,
-        image=Image(reader.getstring("image")),
+        image=Image(image) if image else None,
+        dockerfile=Dockerfile(dockerfile) if dockerfile else None,
         stop=container_name not in config.option.docker_dont_stop,
         environment=environment,
         healthcheck_cmd=hc_cmd,

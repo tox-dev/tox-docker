@@ -31,10 +31,18 @@ Each docker container you want to run must be configured via a
 choose which must start with a letter and consist of only letters, numbers,
 dots, hyphens, and underscores. Each ``[docker:container-name]`` section must
 contain at least an ``image`` directive, which must name a `Docker image
-<https://docs.docker.com/glossary/#image>`__ as you'd pass to ``docker run``::
+<https://docs.docker.com/glossary/#image>`__ as you'd pass to ``docker
+run``; or a ``build`` directive, containing the path to a `Dockerfile
+<https://docs.docker.com/engine/reference/builder/>`__ as you'd pas to
+``docker build``::
 
     [docker:db]
     image = postgres:9-alpine
+
+    # OR
+
+    [docker:app]
+    dockerfile = {toxinidir}/Dockerfile
 
 Then, in your ``[testenv]``, use the ``docker`` directive to list containers
 you wish to run during those tests::

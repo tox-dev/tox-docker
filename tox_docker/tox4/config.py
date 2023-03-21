@@ -1,8 +1,15 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from tox.config.sets import ConfigSet
 
-from tox_docker.config import ContainerConfig, Image, Link, Port, Volume
+from tox_docker.config import (
+    ContainerConfig,
+    Dockerfile,
+    Image,
+    Link,
+    Port,
+    Volume,
+)
 
 # nanoseconds in a second; named "SECOND" so that "1.5 * SECOND" makes sense
 SECOND = 1000000000
@@ -23,10 +30,15 @@ class DockerConfigSet(ConfigSet):
     def register_config(self) -> None:
         self.add_config(
             keys=["image"],
-            of_type=Image,
-            default=Image(""),
-            desc="docker image to run",
-            post_process=image_required,
+            of_type=Optional[Image],
+            default=None,
+            desc="docker image to run [specify one of image or dockerfile]",
+        )
+        self.add_config(
+            keys=["dockerfile"],
+            of_type=Optional[Dockerfile],
+            default=None,
+            desc="Dockerfile to build/run [specify one of image or dockerfile]",
         )
         self.add_config(
             keys=["environment"],
@@ -89,9 +101,14 @@ class DockerConfigSet(ConfigSet):
 
 
 def parse_container_config(docker_config: DockerConfigSet) -> ContainerConfig:
+    if docker_config["image"] and docker_config["dockerfile"]:
+        raise ValueError(f"{docker_config.name}: specify image or dockerfile, not both")
+    elif not docker_config["image"] and not docker_config["dockerfile"]:
+        raise ValueError(f"{docker_config.name}: specify one of image or dockerfile")
     return ContainerConfig(
         name=docker_config.name,
         image=docker_config["image"],
+        dockerfile=docker_config["dockerfile"],
         stop=docker_config.name not in docker_config._conf.options.docker_dont_stop,
         environment=docker_config["environment"],
         healthcheck_cmd=docker_config["healthcheck_cmd"],
