@@ -65,12 +65,12 @@ def docker_pull(container_config: ContainerConfig, log: LogFunc) -> None:
     docker = docker_module.from_env(version="auto")
 
     try:
-        docker.images.get(container_config.image.name)
+        docker.images.get(str(container_config.image))
     except ImageNotFound:
         log(f"pull {container_config.image!r} (from {container_config.name!r})")
         docker.images.pull(container_config.image.name, tag=container_config.image.tag)
 
-    container_config.runnable_image = docker.images.get(container_config.image.name)
+    container_config.runnable_image = docker.images.get(str(container_config.image))
 
 
 def docker_build(container_config: ContainerConfig, log: LogFunc) -> None:
