@@ -78,7 +78,13 @@ def docker_build(container_config: ContainerConfig, log: LogFunc) -> None:
 
     docker = docker_module.from_env(version="auto")
 
-    log(f"build {container_config.dockerfile!r}")
+    if container_config.dockerfile_target:
+        log(
+            f"build {container_config.dockerfile!r} target {container_config.dockerfile_target!r}"
+        )
+    else:
+        log(f"build {container_config.dockerfile!r}")
+
     image, _ = docker.images.build(
         path=container_config.dockerfile.directory,
         dockerfile=container_config.dockerfile.filename,
