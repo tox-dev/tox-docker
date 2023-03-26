@@ -1,9 +1,11 @@
+from pathlib import Path
 from typing import Collection, Dict, Mapping, Optional
 import os
 import os.path
 import re
 
 from docker.models.containers import Container as DockerContainer
+from docker.models.images import Image as DockerImage
 from docker.types import Mount
 
 RunningContainers = Dict[str, DockerContainer]
@@ -47,6 +49,16 @@ class Image:
 
     def __repr__(self) -> str:
         return repr(str(self))
+
+
+class Dockerfile:
+    def __init__(self, config_line: str) -> None:
+        self.path = Path(config_line)
+        self.directory = str(self.path.parent)
+        self.filename = str(self.path.name)
+
+    def __repr__(self) -> str:
+        return str(self.path)
 
 
 class Port:
@@ -107,7 +119,9 @@ class ContainerConfig:
     def __init__(
         self,
         name: str,
-        image: Image,
+        image: Optional[Image],
+        dockerfile: Optional[Dockerfile],
+        dockerfile_target: str,
         stop: bool,
         environment: Optional[Mapping[str, str]] = None,
         healthcheck_cmd: Optional[str] = None,
@@ -122,6 +136,8 @@ class ContainerConfig:
         self.name = name
         self.runas_name = runas_name(name)
         self.image = image
+        self.dockerfile = dockerfile
+        self.dockerfile_target = dockerfile_target
         self.stop = stop
         self.environment: Mapping[str, str] = environment or {}
         self.ports: Collection[Port] = ports or {}
@@ -139,3 +155,5 @@ class ContainerConfig:
             int(healthcheck_start_period) if healthcheck_start_period else None
         )
         self.healthcheck_retries = healthcheck_retries
+
+        self.runnable_image: Optional[DockerImage] = None

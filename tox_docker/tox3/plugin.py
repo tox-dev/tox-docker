@@ -15,8 +15,8 @@ from tox.venv import VirtualEnv
 
 from tox_docker.config import ContainerConfig, RunningContainers
 from tox_docker.plugin import (
+    docker_build_or_pull,
     docker_health_check,
-    docker_pull,
     docker_run,
     get_env_vars,
     HealthCheckFailed,
@@ -84,7 +84,7 @@ def tox_runtest_pre(venv: VirtualEnv) -> None:
         env_container_configs.append(CONTAINER_CONFIGS[container_name])
 
     for container_config in env_container_configs:
-        docker_pull(container_config, log)
+        docker_build_or_pull(container_config, log)
 
     ENV_CONTAINERS.setdefault(venv, {})
     running_containers = ENV_CONTAINERS[venv]

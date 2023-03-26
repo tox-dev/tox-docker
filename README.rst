@@ -31,10 +31,18 @@ Each docker container you want to run must be configured via a
 choose which must start with a letter and consist of only letters, numbers,
 dots, hyphens, and underscores. Each ``[docker:container-name]`` section must
 contain at least an ``image`` directive, which must name a `Docker image
-<https://docs.docker.com/glossary/#image>`__ as you'd pass to ``docker run``::
+<https://docs.docker.com/glossary/#image>`__ as you'd pass to ``docker
+run``; or a ``build`` directive, containing the path to a `Dockerfile
+<https://docs.docker.com/glossary/#dockerfile>`__ as you'd pas to
+``docker build``::
 
     [docker:db]
     image = postgres:9-alpine
+
+    # OR
+
+    [docker:app]
+    dockerfile = {toxinidir}/Dockerfile
 
 Then, in your ``[testenv]``, use the ``docker`` directive to list containers
 you wish to run during those tests::
@@ -46,10 +54,19 @@ you wish to run during those tests::
 
 The ``[docker:container-name]`` section may contain the following directives:
 
-``image`` (required)
+``image``
     The `Docker image <https://docs.docker.com/glossary/#image>`__ to run.
     This value is passed directly to Docker, and may be of any of the forms
-    that Docker accepts in eg ``docker run``.
+    that Docker accepts in eg ``docker run``. One of ``image`` or
+    ``dockerfile`` is required.
+
+``dockerfile``
+    Path to a `Dockerfile <https://docs.docker.com/glossary/#dockerfile>`__
+    to build and run. One of ``dockerfile`` or ``image`` is required.
+
+``dockerfile_target``
+    Name of the build-stage to build in a multi-stage Dockerfile. An error
+    is raised if ``dockerfile_target`` is set without ``dockerfile`` set.
 
 ``environment``
     A multi-line list of ``KEY=value`` settings which is used to set
@@ -219,6 +236,8 @@ Change Log
     * Drop test support for docker (Python library) 3.x; add test support
       for docker 6.x. Other versions may work, but we only support tested
       versions.
+    * Add support for ``dockerfile`` and ``dockerfile_target`` directives
+      to build local images
 * 4.0.0
     * Support tox 4 as well as tox 3
     * Drop support for Python 3.6

@@ -18,9 +18,9 @@ from tox.tox_env.errors import Fail
 
 from tox_docker.config import RunningContainers
 from tox_docker.plugin import (
+    docker_build_or_pull,
     docker_get,
     docker_health_check,
-    docker_pull,
     docker_run,
     get_env_vars,
     HealthCheckFailed,
@@ -70,7 +70,7 @@ def tox_before_run_commands(tox_env: ToxEnv) -> None:
         seen.add(container_config.name)
 
     for container_config in container_configs:
-        docker_pull(container_config, log)
+        docker_build_or_pull(container_config, log)
 
     config_and_container = []
     running_containers: RunningContainers = {}
