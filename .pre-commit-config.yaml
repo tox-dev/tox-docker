@@ -10,7 +10,7 @@ repos:
 
   # Python code formatting
   - repo: https://github.com/PyCQA/autoflake
-    rev: v2.1.0
+    rev: v2.1.1
     hooks:
       - id: autoflake
         args: [--in-place, --remove-all-unused-imports, --remove-unused-variable, --exclude, 'tox_docker/__init__.py']
