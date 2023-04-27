@@ -123,6 +123,7 @@ class ContainerConfig:
         dockerfile: Optional[Dockerfile],
         dockerfile_target: str,
         stop: bool,
+        privileged: bool = False,
         environment: Optional[Mapping[str, str]] = None,
         healthcheck_cmd: Optional[str] = None,
         healthcheck_interval: Optional[float] = None,
@@ -139,6 +140,7 @@ class ContainerConfig:
         self.dockerfile = dockerfile
         self.dockerfile_target = dockerfile_target
         self.stop = stop
+        self.privileged = privileged
         self.environment: Mapping[str, str] = environment or {}
         self.ports: Collection[Port] = ports or {}
         self.links: Collection[Link] = links or {}

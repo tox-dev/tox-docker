@@ -47,6 +47,12 @@ class DockerConfigSet(ConfigSet):
             desc="Dockerfile target to build/run",
         )
         self.add_config(
+            keys=["privileged"],
+            of_type=bool,
+            default=False,
+            desc="give extended privileges to this container",
+        )
+        self.add_config(
             keys=["environment"],
             of_type=Dict[str, str],
             default={},
@@ -123,6 +129,7 @@ def parse_container_config(docker_config: DockerConfigSet) -> ContainerConfig:
         dockerfile=docker_config["dockerfile"],
         dockerfile_target=docker_config["dockerfile_target"],
         stop=docker_config.name not in docker_config._conf.options.docker_dont_stop,
+        privileged=docker_config["privileged"],
         environment=docker_config["environment"],
         healthcheck_cmd=docker_config["healthcheck_cmd"],
         healthcheck_interval=docker_config["healthcheck_interval"],
