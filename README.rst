@@ -138,6 +138,12 @@ The ``[docker:container-name]`` section may contain the following directives:
     test run until the container reports healthy, and will fail the test
     run if it never does so (within the parameters specified).
 
+```privileged```
+    A boolean string that defaults to False. By default containers are unprivileged and does
+    not have access to devices.  When true, this corresponds to
+    `docker run --privileged
+    <https://docs.docker.com/engine/reference/run/#runtime-privilege-and-linux-capabilities>`__.
+
 Command-Line Arguments
 ----------------------
 
@@ -193,6 +199,7 @@ Example
     healthcheck_retries = 30
     healthcheck_interval = 1
     healthcheck_start_period = 1
+    privileged = true
     # Configure a bind-mounted volume on the host to store Postgres' data
     # NOTE: this is included for demonstration purposes of tox-docker's
     # volume capability; you probably _don't_ want to do this for real
