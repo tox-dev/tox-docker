@@ -2,7 +2,7 @@
 set -e
 set -x
 
-docker_version=$2
+docker_version=$1
 
 
 # our tox.ini sets up volumes within .tox, so make sure it exists
