@@ -232,6 +232,8 @@ versions of Python or tox, but these configurations are no longer supported.
 Change Log
 ==========
 
+* 5.0.0
+    * Remove support for tox 3
 * 4.1.1
     * Fix typo in README (thanks @akx)
 * 4.1.0
