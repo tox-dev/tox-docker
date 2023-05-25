@@ -20,11 +20,11 @@ jobs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
 
-  - script: ./ci.sh tox-4.x docker-6.x
-    displayName: 'Tox 4.x, Docker 6.x'
+  - script: ./ci.sh docker-6.x
+    displayName: 'Docker 6.x'
 
-  - script: ./ci.sh tox-4.x docker-5.x
-    displayName: 'Tox 4.x, Docker 5.x'
+  - script: ./ci.sh docker-5.x
+    displayName: 'Docker 5.x'
 
-  - script: ./ci.sh tox-4.x docker-4.x
-    displayName: 'Tox 4.x, Docker 4.x'
+  - script: ./ci.sh docker-4.x
+    displayName: 'Docker 4.x'

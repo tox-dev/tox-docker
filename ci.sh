@@ -2,7 +2,6 @@
 set -e
 set -x
 
-tox_version=$1
 docker_version=$2
 
 
@@ -10,8 +9,8 @@ docker_version=$2
 # before trying to run tox...
 mkdir -p .tox
 
-pip install --constraint $tox_version --constraint $docker_version -r dev-requirements.txt
-pip install --constraint $tox_version --constraint $docker_version .
+pip install --constraint $docker_version -r dev-requirements.txt
+pip install --constraint $docker_version .
 pip show tox tox-docker docker
 
 python tox_docker/tests/capture_containers_and_volumes.py .
