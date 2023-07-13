@@ -25,6 +25,8 @@ IMAGE_NAME = re.compile(
     r"$"
 )
 
+ENV_VAR = re.compile("[A-Z0-9_]+")
+
 
 def runas_name(container_name: str, pid: Optional[int] = None) -> str:
     """
@@ -65,20 +67,38 @@ class Dockerfile:
         return str(self.path)
 
 
-class Port:
+class ExposedPort:
     def __init__(self, config_line: str) -> None:
-        host_port, _, container_port_proto = config_line.partition(":")
+        env_var, _, container_port_proto = config_line.partition("=")
         container_port, _, protocol = container_port_proto.partition("/")
 
-        if protocol.lower() not in ("tcp", "udp"):
-            raise ValueError("protocol must be tcp or udp")
-        if not host_port.isdigit():
-            raise ValueError("host port must be an int")
+        if not ENV_VAR.match(env_var):
+            raise ValueError(f"{env_var} is not a valid environment variable")
         if not container_port.isdigit():
             raise ValueError("container port must be an int")
+        if protocol.lower() not in ("tcp", "udp"):
+            raise ValueError("protocol must be tcp or udp")
 
-        self.host_port = int(host_port)
-        self.container_port_proto = container_port_proto
+        self.env_var = env_var
+        self.container_port = container_port
+        self.protocol = protocol
+
+    @property
+    def container_port_proto(self) -> str:
+        return f"{self.container_port}/{self.protocol}"
+
+
+class HostVar:
+    def __init__(self, config_line: str) -> None:
+        if not ENV_VAR.match(config_line):
+            raise ValueError(f"{config_line!r} is not a valid envionrment variable")
+        self.host_var = config_line
+
+    def __str__(self) -> str:
+        return self.host_var
+
+    def __repr__(self) -> str:
+        return repr(str(self))
 
 
 class Link:
@@ -133,7 +153,8 @@ class ContainerConfig:
         healthcheck_timeout: Optional[float] = None,
         healthcheck_start_period: Optional[float] = None,
         healthcheck_retries: Optional[int] = None,
-        ports: Optional[Collection[Port]] = None,
+        expose: Optional[Collection[ExposedPort]] = None,
+        host_var: Optional[HostVar] = None,
         links: Optional[Collection[Link]] = None,
         volumes: Optional[Collection[Volume]] = None,
     ) -> None:
@@ -144,8 +165,9 @@ class ContainerConfig:
         self.dockerfile_target = dockerfile_target
         self.stop = stop
         self.environment: Mapping[str, str] = environment or {}
-        self.ports: Collection[Port] = ports or {}
-        self.links: Collection[Link] = links or {}
+        self.expose: Collection[ExposedPort] = expose or []
+        self.host_var = str(host_var) if host_var else ""
+        self.links: Collection[Link] = links or []
         self.mounts: Collection[Mount] = [v.docker_mount for v in volumes or ()]
 
         self.healthcheck_cmd = healthcheck_cmd
@@ -201,10 +223,16 @@ class DockerConfigSet(ConfigSet):
             desc="environment variables to pass to the docker container",
         )
         self.add_config(
-            keys=["ports"],
-            of_type=List[Port],
+            keys=["expose"],
+            of_type=List[ExposedPort],
             default=[],
-            desc="ports to expose",
+            desc="contiainer ports to expose to the testenv",
+        )
+        self.add_config(
+            keys=["host_var"],
+            of_type=Optional[HostVar],
+            default=None,
+            desc="environment variable to pass hostname or IP of container to testenv",
         )
         self.add_config(
             keys=["links"],
@@ -277,7 +305,8 @@ def parse_container_config(docker_config: DockerConfigSet) -> ContainerConfig:
         healthcheck_timeout=docker_config["healthcheck_timeout"],
         healthcheck_start_period=docker_config["healthcheck_start_period"],
         healthcheck_retries=docker_config["healthcheck_retries"],
-        ports=docker_config["ports"],
+        expose=docker_config["expose"],
+        host_var=docker_config["host_var"],
         links=docker_config["links"],
         volumes=docker_config["volumes"],
     )

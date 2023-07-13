@@ -76,6 +76,44 @@ def escape_env_var(varname: str) -> str:
     return "".join(varletters)
 
 
+def get_host_env_var(container_config: ContainerConfig) -> str:
+    if container_config.host_var:
+        return container_config.host_var
+
+    return escape_env_var(f"{container_config.name}_HOST")
+
+
+def get_env_vars(
+    container_config: ContainerConfig, container: Container
+) -> Mapping[str, str]:
+    env = {}
+    for containerport, hostports in container.attrs["NetworkSettings"]["Ports"].items():
+        if hostports is None:
+            # The port is exposed by the container, but not published.
+            continue
+
+        for spec in hostports:
+            if spec["HostIp"] == "0.0.0.0":
+                hostport = spec["HostPort"]
+                env_var = get_port_env_var(container_config, containerport)
+                env[env_var] = hostport
+                break
+
+    gateway_ip = get_gateway_ip(container)
+    env_var = get_host_env_var(container_config)
+    env[env_var] = gateway_ip
+
+    return env
+
+
+def get_port_env_var(container_config: ContainerConfig, containerport: str) -> str:
+    for exposed_port in container_config.expose:
+        if exposed_port.container_port_proto == containerport:
+            return exposed_port.env_var
+
+    return escape_env_var(f"{container_config.name}_{containerport}_PORT")
+
+
 def docker_build_or_pull(container_config: ContainerConfig) -> None:
     if container_config.image:
         docker_pull(container_config)
@@ -139,7 +177,7 @@ def docker_run(
     if container_config.healthcheck_retries:
         healthcheck["retries"] = container_config.healthcheck_retries
 
-    ports = {p.container_port_proto: p.host_port for p in container_config.ports}
+    ports = {p.container_port_proto: 0 for p in container_config.expose}
 
     links = {}
     for link in container_config.links:
@@ -180,7 +218,7 @@ def docker_health_check(
     docker = docker_module.from_env(version="auto")
 
     if "Health" in container.attrs["State"]:
-        log(f"health check {container_config.image!r} (from {container_config.name!r})")
+        log(f"health check {container_config.name!r}")
         while True:
             container.reload()
             health = container.attrs["State"]["Health"]["Status"]
@@ -213,29 +251,6 @@ def docker_get(container_config: ContainerConfig) -> Optional[Container]:
 def stop_containers(containers: Iterable[Tuple[ContainerConfig, Container]]) -> None:
     for container_config, container in containers:
         docker_stop(container_config, container)
-
-
-def get_env_vars(
-    container_config: ContainerConfig, container: Container
-) -> Mapping[str, str]:
-    env = {}
-    gateway_ip = get_gateway_ip(container)
-    for containerport, hostports in container.attrs["NetworkSettings"]["Ports"].items():
-        if hostports is None:
-            # The port is exposed by the container, but not published.
-            continue
-
-        for spec in hostports:
-            if spec["HostIp"] == "0.0.0.0":
-                hostport = spec["HostPort"]
-                break
-        else:
-            continue
-
-        env[escape_env_var(f"{container_config.name}_HOST")] = gateway_ip
-        env[escape_env_var(f"{container_config.name}_{containerport}_PORT")] = hostport
-
-    return env
 
 
 @impl
