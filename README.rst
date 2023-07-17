@@ -80,20 +80,20 @@ The ``[docker:container-name]`` section may contain the following directives:
     docker container's ``EXPOSE`` d port. If ``expose`` is specified, only
     the listed ports will have environment variables created for them.
 
-    If ``expose`` is not specified, all the container's ``EXPOSE`` d ports are
-    made available (equivalent to ``docker run -P ...``) using default
+    If ``expose`` is not specified, all the container's ``EXPOSE`` d ports
+    are made available (equivalent to ``docker run -P ...``) using default
     environment variable names of the form
-    ``<container-name>_<port-number>_<protocol>_PORT`` (eg
-    ``NGINX_80_TCP_PORT`` or ``TELEGRAF_8092_UDP_PORT``). The container name
-    part is converted to upper case, and all non-alphanumeric characters are
-    replaced with an underscore (``_``).
+    ``<container-name>_<port-number>_<protocol>_PORT`` (eg ``NGINX_80_TCP_PORT``
+    or ``TELEGRAF_8092_UDP_PORT``), with the container name and protocol
+    converted to upper case, and non-alphanumeric characters replaced with an
+    underscore (``_``).
 
 ``host_var``
-    A single string, with the name of an environment variable that will
-    contain the name or IP address to use to communicate with the container.
-    Defaults to ``<container_name>>_HOST`` if not set. The container name
-    part is converted to upper case, and all non-alphanumeric characters
-    are replaced with an underscore (``_``).
+    The name of an environment variable that will contain the hostname or IP
+    address to use to communicate with the container. Defaults to
+    ``<container_name>_HOST`` if not set, with the container name converted to
+    upper case, and non-alphanumeric characters replaced with an underscore
+    (``_``).
 
 ``links``
     A multi-line list of `container links
