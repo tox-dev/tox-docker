@@ -4,6 +4,8 @@ jobs:
     vmImage: 'ubuntu-latest'
   strategy:
     matrix:
+      Python312:
+        python.version: '3.12'
       Python311:
         python.version: '3.11'
       Python310:
