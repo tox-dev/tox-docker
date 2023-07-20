@@ -73,37 +73,27 @@ The ``[docker:container-name]`` section may contain the following directives:
     environment variables for the container. The variables are only available
     to the container, not to other containers or the test environment.
 
-``ports``
+``expose``
     A multi-line list of port mapping specifications, as
-    ``HOST_PORT:CONTAINER_PORT/PROTO``, which causes the container's
-    ``EXPOSE`` d port to be available on ``HOST_PORT``. See below for
-    more on port mapping.
+    ``ENV_VAR=CONTAINER_PORT/PROTO``. Within the testenv, the environment
+    variable ``ENV_VAR`` will contain the port number to connect to the
+    docker container's ``EXPOSE`` d port. If ``expose`` is specified, only
+    the listed ports will have environment variables created for them.
 
-    If ``ports`` is not specified, all the container's ``EXPOSE`` d ports are
-    mapped (equivalent to ``docker run -P ...``)
-
-    For each mapped port, an environment variable of the form
-    ``<container-name>_<port-number>_<protocol>_PORT`` (eg
-    ``NGINX_80_TCP_PORT`` or ``TELEGRAF_8092_UDP_PORT``) is set for the test
-    run.
-
-    For each container, an environment variable of the form
-    ``<container_name>_HOST`` is set for the test run, indicating the host
-    name or IP address to use to communicate with the container.
-
-    If you set the ``HOST_PORT`` to zero, a random available port will be
-    assigned on the tox host. This is useful in case the container does not
-    ``EXPOSE`` the port you need, or if you want to map only some of the
-    ``EXPOSE``\d ports.
-
-    In both environment variables, the container name part is converted to
-    upper case, and all non-alphanumeric characters are replaced with an
+    If ``expose`` is not specified, all the container's ``EXPOSE`` d ports
+    are made available (equivalent to ``docker run -P ...``) using default
+    environment variable names of the form
+    ``<container-name>_<port-number>_<protocol>_PORT`` (eg ``NGINX_80_TCP_PORT``
+    or ``TELEGRAF_8092_UDP_PORT``), with the container name and protocol
+    converted to upper case, and non-alphanumeric characters replaced with an
     underscore (``_``).
 
-    Tox-docker does not attempt to ensure that you have proper permission to
-    bind the ``HOST_PORT``, that it is not already bound and listening, etc;
-    if you explicitly list ports, it is your responsibility to ensure that
-    it can be successfully mapped.
+``host_var``
+    The name of an environment variable that will contain the hostname or IP
+    address to use to communicate with the container. Defaults to
+    ``<container_name>_HOST`` if not set, with the container name converted to
+    upper case, and non-alphanumeric characters replaced with an underscore
+    (``_``).
 
 ``links``
     A multi-line list of `container links
@@ -206,11 +196,9 @@ Example
     # Within the appserv container, host "db" is linked to the postgres container
     links =
         db:db
-    # Use ports to expose specific ports; if you don't specify ports, then all
-    # the EXPOSEd ports defined by the image are mapped to an available
-    # ephemeral port.
-    ports =
-        8080:8080/tcp
+    # Expose ports to the testenv
+    expose =
+        APP_HTTP_PORT=8080/tcp
 
 
 Environment Variables
@@ -227,6 +215,18 @@ Tox-docker requires tox to be run in Python 3.8 or newer, and requires tox
 version 4 or newer. Older versions of tox-docker may work with older
 versions of Python or tox, but these configurations are no longer supported.
 
+Upgrading
+---------
+
+Some configuration options were removed:
+
+New in 5.0:
+
+``ports``
+    This directive was removed in tox-docker version 5.0. Use ``expose``
+    instead. The ability to map a container port to a specific host port was
+    completely removed.
+
 
 ==========
 Change Log
@@ -235,6 +235,7 @@ Change Log
 * 5.0.0
     * Remove support for tox 3
     * Removed support for Python 3.7 and earlier
+    * Remove ``ports``; add ``expose`` and ``host_var``
 * 4.1.1
     * Fix typo in README (thanks @akx)
 * 4.1.0
