@@ -91,7 +91,7 @@ class ExposedPort:
 class HostVar:
     def __init__(self, config_line: str) -> None:
         if not ENV_VAR.match(config_line):
-            raise ValueError(f"{config_line!r} is not a valid envionrment variable")
+            raise ValueError(f"{config_line!r} is not a valid environment variable")
         self.host_var = config_line
 
     def __str__(self) -> str:
@@ -226,7 +226,7 @@ class DockerConfigSet(ConfigSet):
             keys=["expose"],
             of_type=List[ExposedPort],
             default=[],
-            desc="contiainer ports to expose to the testenv",
+            desc="container ports to expose to the testenv",
         )
         self.add_config(
             keys=["host_var"],
