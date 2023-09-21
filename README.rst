@@ -272,7 +272,7 @@ Code Style
 ----------
 
 Tox-docker uses black and isort to enforce style standards on the codebase.
-The formatting is orindaily done for you via `pre-commit
+The formatting is ordinarily done for you via `pre-commit
 <https://pre-commit.com/>`_, and is enforced via the ``tox -e style`` build.
 To work on tox-docker locally with pre-commit, `pip install -r
 dev-requirements.txt`` and ``pre-commit install`` to set up the git hooks;
