@@ -20,6 +20,9 @@ jobs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
 
+  - script: ./ci.sh docker-7.x
+    displayName: 'Docker 7.x'
+
   - script: ./ci.sh docker-6.x
     displayName: 'Docker 6.x'
 

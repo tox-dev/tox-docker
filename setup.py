@@ -8,7 +8,7 @@ setup(
     maintainer="Dan Crosta",
     maintainer_email="dcrosta@late.am",
     install_requires=[
-        "docker>=4.0,<7.0",
+        "docker>=4.0,<8.0",
         "tox>=4.0.0,<5.0",
     ],
     packages=find_packages(),
