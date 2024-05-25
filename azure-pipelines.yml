@@ -6,19 +6,14 @@ jobs:
     matrix:
       Python312:
         python.version: '3.12'
-        python.allowUnstable: true
       Python311:
         python.version: '3.11'
-        python.allowUnstable: false
       Python310:
         python.version: '3.10'
-        python.allowUnstable: false
       Python39:
         python.version: '3.9'
-        python.allowUnstable: false
       Python38:
         python.version: '3.8'
-        python.allowUnstable: false
     maxParallel: 5
 
   steps:
