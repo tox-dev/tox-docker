@@ -3,14 +3,14 @@
 repos:
   # General housekeeping
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
 
   # Python code formatting
   - repo: https://github.com/PyCQA/autoflake
-    rev: v2.3.0
+    rev: v2.3.1
     hooks:
       - id: autoflake
         args: [--in-place, --remove-all-unused-imports, --remove-unused-variable, --exclude, 'tox_docker/__init__.py']
@@ -26,7 +26,7 @@ repos:
       - id: isort
 
   - repo: https://github.com/psf/black
-    rev: 24.2.0
+    rev: 24.4.2
     hooks:
     - id: black
       language_version: python3
