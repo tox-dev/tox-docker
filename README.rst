@@ -236,6 +236,7 @@ Change Log
     * Remove support for tox 3
     * Removed support for Python 3.7 and earlier
     * Remove ``ports``; add ``expose`` and ``host_var``
+    * Support ``docker`` (the Python module) 7.x (thanks @jonathangreen)
 * 4.1.1
     * Fix typo in README (thanks @akx)
 * 4.1.0
