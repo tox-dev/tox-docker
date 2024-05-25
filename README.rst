@@ -236,6 +236,7 @@ Change Log
     * Remove support for tox 3
     * Removed support for Python 3.7 and earlier
     * Remove ``ports``; add ``expose`` and ``host_var``
+    * Support ``docker`` (the Python module) 7.x (thanks @jonathangreen)
 * 4.1.1
     * Fix typo in README (thanks @akx)
 * 4.1.0
@@ -272,7 +273,7 @@ Code Style
 ----------
 
 Tox-docker uses black and isort to enforce style standards on the codebase.
-The formatting is orindaily done for you via `pre-commit
+The formatting is ordinarily done for you via `pre-commit
 <https://pre-commit.com/>`_, and is enforced via the ``tox -e style`` build.
 To work on tox-docker locally with pre-commit, `pip install -r
 dev-requirements.txt`` and ``pre-commit install`` to set up the git hooks;
