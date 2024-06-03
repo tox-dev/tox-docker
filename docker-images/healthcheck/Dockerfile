@@ -1,7 +1,7 @@
 FROM python:3.8-alpine
 
 # tests can cause the built-in healthcheck to fail by varying
-# this envrionment variable; the healthcheck command cares about
+# this environment variable; the healthcheck command cares about
 # its presence (by default, it is present)
 ENV HCFILE=hc
 
