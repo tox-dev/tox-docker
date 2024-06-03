@@ -15,11 +15,6 @@ repos:
       - id: autoflake
         args: [--in-place, --remove-all-unused-imports, --remove-unused-variable, --exclude, 'tox_docker/__init__.py']
 
-  - repo: https://github.com/asottile/seed-isort-config
-    rev: v2.2.0
-    hooks:
-      - id: seed-isort-config
-
   - repo: https://github.com/PyCQA/isort
     rev: 5.13.2
     hooks:
