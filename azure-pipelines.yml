@@ -31,6 +31,10 @@ jobs:
 
   - script: ./ci.sh docker-5.x
     displayName: 'Docker 5.x'
+    # docker 5 uses distutils, removed in py312
+    condition: in(variables['python.version'], '3.11', '3.10', '3.9', '3.8')
 
   - script: ./ci.sh docker-4.x
     displayName: 'Docker 4.x'
+    # docker 4 uses distutils, removed in py312
+    condition: in(variables['python.version'], '3.11', '3.10', '3.9', '3.8')
