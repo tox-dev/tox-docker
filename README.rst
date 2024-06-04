@@ -2,7 +2,7 @@
  tox-docker
 ============
 
-A `tox <https://tox.readthedocs.io/en/latest/>`__ plugin which runs one or
+A `tox <https://tox.wiki/en/latest/>`__ plugin which runs one or
 more `Docker <https://www.docker.com/>`__ containers during the test run.
 
 Links: `Source Code <https://github.com/tox-dev/tox-docker>`__ |
@@ -33,7 +33,7 @@ dots, hyphens, and underscores. Each ``[docker:container-name]`` section must
 contain at least an ``image`` directive, which must name a `Docker image
 <https://docs.docker.com/glossary/#image>`__ as you'd pass to ``docker
 run``; or a ``build`` directive, containing the path to a `Dockerfile
-<https://docs.docker.com/glossary/#dockerfile>`__ as you'd pas to
+<https://docs.docker.com/glossary/#dockerfile>`__ as you'd pass to
 ``docker build``::
 
     [docker:db]
