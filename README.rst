@@ -232,6 +232,9 @@ New in 5.0:
 Change Log
 ==========
 
+* 5.0.1 (unreleased)
+    * Corrected link & typos in README (thanks @kurtmckee)
+    * Fixed CI on Python 3.12
 * 5.0.0
     * Remove support for tox 3
     * Removed support for Python 3.7 and earlier
