@@ -234,6 +234,7 @@ Change Log
 
 * 5.0.1 (unreleased)
     * Corrected link & typos in README (thanks @kurtmckee)
+    * Removed redundant seed-isort-config precommit hook (thanks @kurtmckee)
     * Fixed CI on Python 3.12
 * 5.0.0
     * Remove support for tox 3
