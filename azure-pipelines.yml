@@ -23,12 +23,6 @@ jobs:
       architecture: 'x64'
       allowUnstable: $(python.allowUnstable)
 
-  - task: Docker@2
-    inputs:
-      containerRegistry: dockerhub
-      command: pull
-      arguments: ksdn117/tcp-udp-test
-
   - script: ./ci.sh docker-7.x
     displayName: 'Docker 7.x'
 
