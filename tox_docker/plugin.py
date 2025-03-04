@@ -190,7 +190,7 @@ def docker_run(
 
     for mount in container_config.mounts:
         source = mount["Source"]
-        if not os.path.exists(source):
+        if mount["Type"] != "tmpfs" and not os.path.exists(source):
             raise ValueError(f"Volume source {source!r} does not exist")
 
     assert container_config.runnable_image

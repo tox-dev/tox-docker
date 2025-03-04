@@ -6,3 +6,4 @@ version.txt
 tox_docker.egg-info
 build/
 dist/
+.idea
