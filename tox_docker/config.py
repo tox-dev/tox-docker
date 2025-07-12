@@ -1,4 +1,5 @@
 from pathlib import Path
+from threading import get_ident
 from typing import Collection, Dict, List, Mapping, Optional
 import os
 import os.path
@@ -37,7 +38,7 @@ def runas_name(container_name: str, pid: Optional[int] = None) -> str:
     to avoid needing to maintain a mapping.
 
     """
-    pid = pid or os.getpid()
+    pid = pid or get_ident()
     return f"{container_name}-tox-{pid}"
 
 
