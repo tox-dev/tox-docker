@@ -43,15 +43,13 @@ class HealthCheckFailed(Exception):
 def get_gateway_ip(container: Container) -> str:
     gateway = os.getenv("TOX_DOCKER_GATEWAY")
     if gateway:
-        ip = socket.gethostbyname(gateway)
-    elif sys.platform == "darwin":
+        return socket.gethostbyname(gateway)
+    if sys.platform == "darwin":
         # https://docs.docker.com/docker-for-mac/networking/#use-cases-and-workarounds:
         # there is no bridge network available in Docker for Mac, and exposed ports are
         # made available on localhost (but 0.0.0.0 works just as well)
-        ip = "0.0.0.0"
-    else:
-        ip = container.attrs["NetworkSettings"]["Gateway"] or "0.0.0.0"
-    return ip
+        return "0.0.0.0"
+    return container.attrs["NetworkSettings"]["Gateway"] or "0.0.0.0"
 
 
 def escape_env_var(varname: str) -> str:
