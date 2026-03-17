@@ -49,7 +49,17 @@ def get_gateway_ip(container: Container) -> str:
         # there is no bridge network available in Docker for Mac, and exposed ports are
         # made available on localhost (but 0.0.0.0 works just as well)
         return "0.0.0.0"
-    return container.attrs["NetworkSettings"]["Gateway"] or "0.0.0.0"
+    network_settings = container.attrs["NetworkSettings"]
+    for network in network_settings.get("Networks", {}).values():
+        # preferred interface as of v1.21 API (docker 1.9.0, 2015-11-03)
+        # note behavior may not be correct if there are multiple networks.
+        # a more robust approach may be to prefer specific networks, i.e. "bridge"
+        if ip := network.get("Gateway"):
+            return ip
+    if ip := network_settings.get("Gateway"):
+        # deprecated interface, removed in v1.52 API (docker 29.0.0, 2025-11-10)
+        return ip
+    return "0.0.0.0"
 
 
 def escape_env_var(varname: str) -> str:
