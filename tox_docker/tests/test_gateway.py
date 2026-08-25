@@ -22,10 +22,22 @@ class NotARealContainer(object):
     attrs = {"NetworkSettings": {"Gateway": "1.2.3.4"}}
 
 
+class NotARealContainerOnCustomNetwork(object):
+    # containers attached to a custom (non-default) network don't get a
+    # top-level "Gateway" key in NetworkSettings at all
+    attrs = {"NetworkSettings": {"Networks": {"my-custom-net": {"Gateway": "1.2.3.4"}}}}
+
+
 def test_gateway_ip_is_read_from_container_attrs_on_linux() -> None:
     container = NotARealContainer()
     with sys_platform_as("linux2"):
         assert get_gateway_ip(container) == "1.2.3.4"
+
+
+def test_gateway_ip_is_zero_zero_zero_zero_when_gateway_key_is_missing() -> None:
+    container = NotARealContainerOnCustomNetwork()
+    with sys_platform_as("linux2"):
+        assert get_gateway_ip(container) == "0.0.0.0"
 
 
 def test_gateway_ip_is_zero_zero_zero_zero_on_macos() -> None:
