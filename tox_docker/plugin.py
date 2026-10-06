@@ -50,7 +50,20 @@ def get_gateway_ip(container: Container) -> str:
         # made available on localhost (but 0.0.0.0 works just as well)
         ip = "0.0.0.0"
     else:
-        ip = container.attrs["NetworkSettings"]["Gateway"] or "0.0.0.0"
+        # Try the legacy format first
+        legacy_gateway = container.attrs["NetworkSettings"].get("Gateway")
+        if legacy_gateway:
+            ip = legacy_gateway
+        else:
+            # For newer Docker versions, check Networks section
+            networks = container.attrs["NetworkSettings"].get("Networks", {})
+            # Try to find gateway in any network (typically 'bridge')
+            gateway_ip = None
+            for network_name, network_info in networks.items():
+                gateway_ip = network_info.get("Gateway")
+                if gateway_ip:
+                    break
+            ip = gateway_ip or "0.0.0.0"
     return ip
 
 
