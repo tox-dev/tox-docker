@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Collection, Dict, List, Mapping, Optional
+from typing import Collection, Dict, List, Mapping, Optional, Union
 import os
 import os.path
 import re
@@ -118,25 +118,69 @@ class Link:
 class Volume:
     def __init__(self, config_line: str) -> None:
         parts = config_line.split(":")
-        if len(parts) != 4:
+        if len(parts) < 3 or len(parts) > 4:
             raise ValueError(f"Volume {config_line!r} is malformed")
-        if parts[0] != "bind":
-            raise ValueError(f"Volume {config_line!r} type must be 'bind:'")
-        if parts[1] not in ("ro", "rw"):
-            raise ValueError(f"Volume {config_line!r} options must be 'ro' or 'rw'")
 
-        volume_type, mode, outside, inside = parts
-        if not os.path.isabs(outside):
-            raise ValueError(f"Volume source {outside!r} must be an absolute path")
-        if not os.path.isabs(inside):
-            raise ValueError(f"Mount point {inside!r} must be an absolute path")
+        volume_type, options_str, *_outside_path, inside_path = parts
 
-        self.docker_mount = Mount(
-            source=outside,
-            target=inside,
-            type=volume_type,
-            read_only=bool(mode == "ro"),
-        )
+        if not os.path.isabs(inside_path):
+            raise ValueError(f"Mount point {inside_path!r} must be an absolute path")
+
+        mount_params = {
+            "target": inside_path,
+            "type": volume_type,
+            **self._parse_options(config_line, volume_type, options_str),
+        }
+
+        # bind-specific checks and setup
+        if volume_type == "bind":
+            if len(_outside_path) != 1:
+                raise ValueError(
+                    f"Volume {config_line!r} of type 'bind' must have an outside path"
+                )
+            outside = _outside_path[0]
+
+            if not os.path.isabs(outside):
+                raise ValueError(f"Volume source {outside!r} must be an absolute path")
+            mount_params["source"] = outside
+        # tmpfs-specific setup
+        elif volume_type == "tmpfs":
+            # tmpfs does not have source, so emtpy string
+            mount_params["source"] = ""
+        else:
+            raise ValueError(f"Volume {config_line!r} type must be 'bind' or 'tmpfs'")
+
+        self.docker_mount = Mount(**mount_params)
+
+    def _parse_options(
+        self, config_line: str, volume_type: str, options_str: str
+    ) -> dict:
+        """Parse volume options into `Mount()` params."""
+        result: Dict[str, Union[str, int, bool]] = {}
+        (
+            access_mode,
+            *other_options,
+        ) = options_str.split(";")
+
+        # parsing access mode
+        if access_mode not in ("ro", "rw"):
+            raise ValueError(f"Volume {config_line!r} access mode must be 'ro' or 'rw'")
+        result["read_only"] = bool(access_mode == "ro")
+
+        # parsing tmpfs-specific options
+        if volume_type == "tmpfs":
+            for other_option in other_options:
+                key, value = other_option.split("=")
+                if key == "size":  # volume size, such as 64m
+                    result["tmpfs_size"] = value
+                elif key == "mode":  # permissions, such as 1777
+                    result["tmpfs_mode"] = int(value)
+                else:
+                    raise ValueError(
+                        f"'{other_option!r}' is not a valid option for volume of type '{volume_type}'"
+                    )
+
+        return {}
 
 
 class ContainerConfig:
