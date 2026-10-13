@@ -77,7 +77,12 @@ The ``[docker:container-name]`` section may contain the following directives:
     A multi-line list of port mapping specifications, as
     ``ENV_VAR=CONTAINER_PORT/PROTO``. Within the testenv, the environment
     variable ``ENV_VAR`` will contain the port number to connect to the
-    docker container's ``EXPOSE`` d port. If ``expose`` is specified, only
+    docker container's ``EXPOSE`` d port. The host port is chosen before
+    the container starts and is written into the testenv ``setenv``.
+    ``environment`` is then expanded by tox itself, the same ``{env:NAME}``
+    substitution as ``setenv``. ``{env:ENV_VAR}`` is that host port.
+    ``{env:ENV_VAR:default}`` uses ``default`` when the name is not set.
+    If ``expose`` is specified, only
     the listed ports will have environment variables created for them.
 
     If ``expose`` is not specified, all the container's ``EXPOSE`` d ports
