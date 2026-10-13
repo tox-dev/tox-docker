@@ -167,9 +167,7 @@ def reserve_host_port() -> int:
 
 
 def host_port_bindings(expose: Iterable[ExposedPort]) -> Dict[str, int]:
-    return {
-        exposed.container_port_proto: reserve_host_port() for exposed in expose
-    }
+    return {exposed.container_port_proto: reserve_host_port() for exposed in expose}
 
 
 def exposed_port_env(
