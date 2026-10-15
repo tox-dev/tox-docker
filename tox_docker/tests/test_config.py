@@ -60,6 +60,16 @@ def test_volume_with_windows_target_preserves_drive_colon(
     assert mount["Target"] == target
 
 
+@pytest.mark.parametrize("target", [r"\data", r"C:data"])
+def test_volume_rejects_non_absolute_windows_target(
+    target: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _allow_both_path_styles_in_test(monkeypatch)
+
+    with pytest.raises(ValueError, match="must be an absolute path"):
+        config.Volume(f"bind:rw:/tmp/project/volume-name:{target}")
+
+
 def test_volume_with_windows_source_and_target_preserves_both_drive_colons(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

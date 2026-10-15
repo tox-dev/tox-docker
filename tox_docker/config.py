@@ -138,7 +138,10 @@ class Volume:
             raise ValueError(f"Volume source {outside!r} must be an absolute path")
         # The container path may use either POSIX or Windows syntax, regardless
         # of the host platform running tox.
-        if not (posixpath.isabs(inside) or ntpath.isabs(inside)):
+        windows_drive, _ = ntpath.splitdrive(inside)
+        if not (
+            posixpath.isabs(inside) or (bool(windows_drive) and ntpath.isabs(inside))
+        ):
             raise ValueError(f"Mount point {inside!r} must be an absolute path")
 
         self.docker_mount = Mount(
