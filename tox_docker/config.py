@@ -1,7 +1,9 @@
 from pathlib import Path
 from typing import Collection, Dict, List, Mapping, Optional
+import ntpath
 import os
 import os.path
+import posixpath
 import re
 
 from docker.models.containers import Container as DockerContainer
@@ -117,18 +119,29 @@ class Link:
 
 class Volume:
     def __init__(self, config_line: str) -> None:
-        parts = config_line.split(":")
-        if len(parts) != 4:
+        parts = config_line.split(":", 2)
+        if len(parts) != 3:
             raise ValueError(f"Volume {config_line!r} is malformed")
-        if parts[0] != "bind":
+        volume_type, mode, paths = parts
+
+        path_match = re.fullmatch(r"((?:[A-Za-z]:)?[^:]+):((?:[A-Za-z]:)?[^:]+)", paths)
+        if path_match is None:
+            raise ValueError(f"Volume {config_line!r} is malformed")
+        outside, inside = path_match.groups()
+
+        if volume_type != "bind":
             raise ValueError(f"Volume {config_line!r} type must be 'bind:'")
-        if parts[1] not in ("ro", "rw"):
+        if mode not in ("ro", "rw"):
             raise ValueError(f"Volume {config_line!r} options must be 'ro' or 'rw'")
 
-        volume_type, mode, outside, inside = parts
         if not os.path.isabs(outside):
             raise ValueError(f"Volume source {outside!r} must be an absolute path")
-        if not os.path.isabs(inside):
+        # The container path may use either POSIX or Windows syntax, regardless
+        # of the host platform running tox.
+        windows_drive, _ = ntpath.splitdrive(inside)
+        if not (
+            posixpath.isabs(inside) or (bool(windows_drive) and ntpath.isabs(inside))
+        ):
             raise ValueError(f"Mount point {inside!r} must be an absolute path")
 
         self.docker_mount = Mount(
