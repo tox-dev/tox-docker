@@ -221,14 +221,22 @@ def docker_health_check(
         log(f"health check {container_config.name!r}")
         while True:
             container.reload()
-            health = container.attrs["State"]["Health"]["Status"]
-            if health == "healthy":
+            health = container.attrs["State"]["Health"]
+            status = health["Status"]
+            if status == "healthy":
                 break
-            elif health == "starting":
+            elif status == "starting":
                 time.sleep(0.1)
-            elif health == "unhealthy":
+            elif status == "unhealthy":
                 # the health check failed after its own timeout
                 msg = f"{container_config.image!r} (from {container_config.name!r}) failed health check"
+                for attempt in reversed(health.get("Log") or []):
+                    if attempt.get("ExitCode") == 0:
+                        break
+                    output = (attempt.get("Output") or "").strip()
+                    if output:
+                        msg += f": {output}"
+                        break
                 raise HealthCheckFailed(msg)
 
 
@@ -305,12 +313,10 @@ def tox_before_run_commands(tox_env: ToxEnv) -> None:
     for container_config, container in config_and_container:
         try:
             docker_health_check(container_config, container)
-        except HealthCheckFailed:
+        except HealthCheckFailed as error:
             tox_env.interrupt()
             clean_up_containers(tox_env)
-            raise Fail(
-                f"{container_config.image!r} (from {container_config.name!r}) failed health check"
-            )
+            raise Fail(str(error)) from error
 
         tox_env.conf["set_env"].update(get_env_vars(container_config, container))
 
