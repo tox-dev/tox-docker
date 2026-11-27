@@ -83,6 +83,13 @@ def get_host_env_var(container_config: ContainerConfig) -> str:
     return escape_env_var(f"{container_config.name}_HOST")
 
 
+def get_container_env_var(container_config: ContainerConfig) -> str:
+    if container_config.container_var:
+        return container_config.container_var
+
+    return escape_env_var(f"{container_config.name}_CONTAINER")
+
+
 def get_env_vars(
     container_config: ContainerConfig, container: Container
 ) -> Mapping[str, str]:
@@ -102,7 +109,8 @@ def get_env_vars(
     gateway_ip = get_gateway_ip(container)
     env_var = get_host_env_var(container_config)
     env[env_var] = gateway_ip
-
+    env_var = get_container_env_var(container_config)
+    env[env_var] = container_config.runas_name
     return env
 
 

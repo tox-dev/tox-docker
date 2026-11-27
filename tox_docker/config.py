@@ -101,6 +101,19 @@ class HostVar:
         return repr(str(self))
 
 
+class ContainerVar:
+    def __init__(self, config_line: str) -> None:
+        if not ENV_VAR.match(config_line):
+            raise ValueError(f"{config_line!r} is not a valid environment variable")
+        self.container_var = config_line
+
+    def __str__(self) -> str:
+        return self.container_var
+
+    def __repr__(self) -> str:
+        return repr(str(self))
+
+
 class Link:
     def __init__(self, config_line: str) -> None:
         target, sep, alias = config_line.partition(":")
@@ -155,6 +168,7 @@ class ContainerConfig:
         healthcheck_retries: Optional[int] = None,
         expose: Optional[Collection[ExposedPort]] = None,
         host_var: Optional[HostVar] = None,
+        container_var: Optional[ContainerVar] = None,
         links: Optional[Collection[Link]] = None,
         volumes: Optional[Collection[Volume]] = None,
     ) -> None:
@@ -167,6 +181,7 @@ class ContainerConfig:
         self.environment: Mapping[str, str] = environment or {}
         self.expose: Collection[ExposedPort] = expose or []
         self.host_var = str(host_var) if host_var else ""
+        self.container_var = str(container_var) if container_var else ""
         self.links: Collection[Link] = links or []
         self.mounts: Collection[Mount] = [v.docker_mount for v in volumes or ()]
 
@@ -233,6 +248,12 @@ class DockerConfigSet(ConfigSet):
             of_type=Optional[HostVar],
             default=None,
             desc="environment variable to pass hostname or IP of container to testenv",
+        )
+        self.add_config(
+            keys=["container_var"],
+            of_type=Optional[ContainerVar],
+            default=None,
+            desc="environment variable to pass the name of the container to testenv",
         )
         self.add_config(
             keys=["links"],
