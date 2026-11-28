@@ -20,4 +20,4 @@ python tox_docker/tests/assert_containers_and_volumes_unchanged.py .
 tox -e mypy
 
 echo "testing health check failure handling, an ERROR is expected:"
-tox -e healthcheck-failing 2>&1 | grep "'toxdocker/healthcheck' (from 'healthcheck-failing') failed health check"
+tox -e healthcheck-failing 2>&1 | grep "'toxdocker/healthcheck' (from 'healthcheck-failing') failed health check: service unavailable"

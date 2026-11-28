@@ -126,7 +126,9 @@ The ``[docker:container-name]`` section may contain the following directives:
 
     If any healthcheck parameters are defined, tox-docker will delay the
     test run until the container reports healthy, and will fail the test
-    run if it never does so (within the parameters specified).
+    run if it never does so (within the parameters specified). The error
+    includes the most recent nonempty output from the failing checks, when
+    available.
 
 Command-Line Arguments
 ----------------------
