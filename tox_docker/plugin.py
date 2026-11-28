@@ -27,6 +27,7 @@ import docker as docker_module
 from tox_docker.config import (
     ContainerConfig,
     DockerConfigSet,
+    ExposedPort,
     parse_container_config,
     RunningContainers,
 )
@@ -159,9 +160,30 @@ def docker_build(container_config: ContainerConfig) -> None:
     container_config.runnable_image = image
 
 
+def reserve_host_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("0.0.0.0", 0))
+        return int(sock.getsockname()[1])
+
+
+def host_port_bindings(expose: Iterable[ExposedPort]) -> Dict[str, int]:
+    return {exposed.container_port_proto: reserve_host_port() for exposed in expose}
+
+
+def exposed_port_env(
+    expose: Iterable[ExposedPort], bindings: Mapping[str, int]
+) -> Dict[str, str]:
+    return {
+        exposed.env_var: str(bindings[exposed.container_port_proto])
+        for exposed in expose
+        if exposed.container_port_proto in bindings
+    }
+
+
 def docker_run(
     container_config: ContainerConfig,
     running_containers: RunningContainers,
+    ports: Mapping[str, int],
 ) -> Container:
     docker = docker_module.from_env(version="auto")
 
@@ -176,8 +198,6 @@ def docker_run(
         healthcheck["start_period"] = container_config.healthcheck_start_period
     if container_config.healthcheck_retries:
         healthcheck["retries"] = container_config.healthcheck_retries
-
-    ports = {p.container_port_proto: 0 for p in container_config.expose}
 
     links = {}
     for link in container_config.links:
@@ -201,7 +221,7 @@ def docker_run(
         container_config.runnable_image.id,
         name=container_config.runas_name,
         detach=True,
-        environment=container_config.environment,
+        environment=dict(container_config.environment),
         healthcheck=healthcheck or None,
         links=links,
         ports=ports,
@@ -261,7 +281,7 @@ def tox_add_env_config(env_conf: EnvConfigSet, state: State) -> None:
             section=Section("docker", container_name),
             base=[],
             of_type=DockerConfigSet,
-            for_env=None,
+            for_env=env_conf.env_name,
         )
         if not docker_conf.loaders:
             raise ValueError(f"Missing [docker:{container_name}] in tox.ini")
@@ -279,6 +299,15 @@ def tox_add_env_config(env_conf: EnvConfigSet, state: State) -> None:
 @impl
 def tox_before_run_commands(tox_env: ToxEnv) -> None:
     docker_confs = tox_env.conf.load("docker")
+
+    ports_by_container: Dict[str, Dict[str, int]] = {}
+    for docker_conf in docker_confs:
+        expose = docker_conf["expose"]
+        bindings = host_port_bindings(expose)
+        ports_by_container[docker_conf.name] = bindings
+        tox_env.conf["set_env"].update(
+            exposed_port_env(expose, bindings), override=True
+        )
 
     container_configs = [
         parse_container_config(docker_conf) for docker_conf in docker_confs
@@ -298,7 +327,11 @@ def tox_before_run_commands(tox_env: ToxEnv) -> None:
     config_and_container = []
     running_containers: RunningContainers = {}
     for container_config in container_configs:
-        container = docker_run(container_config, running_containers)
+        container = docker_run(
+            container_config,
+            running_containers,
+            ports_by_container[container_config.name],
+        )
         config_and_container.append((container_config, container))
         running_containers[container_config.runas_name] = container
 
