@@ -6,7 +6,8 @@ A `tox <https://tox.wiki/en/latest/>`__ plugin which runs one or
 more `Docker <https://www.docker.com/>`__ containers during the test run.
 
 Links: `Source Code <https://github.com/tox-dev/tox-docker>`__ |
-`Documentation <https://tox-docker.readthedocs.io/en/latest/>`__
+`Documentation <https://tox-docker.readthedocs.io/en/latest/>`__ |
+`Project Scope <https://tox-docker.readthedocs.io/en/latest/scope.html>`__
 
 .. image:: https://dev.azure.com/dcrosta/tox-docker/_apis/build/status/tox-dev.tox-docker?branchName=master
    :target: https://dev.azure.com/dcrosta/tox-docker/_build?definitionId=1&_a=summary
@@ -236,6 +237,7 @@ Change Log
     * Corrected link & typos in README (thanks @kurtmckee)
     * Removed redundant seed-isort-config precommit hook (thanks @kurtmckee)
     * Fixed CI on Python 3.12
+    * Added a Project Scope page to the documentation
 * 5.0.0
     * Remove support for tox 3
     * Removed support for Python 3.7 and earlier
